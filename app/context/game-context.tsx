@@ -89,6 +89,16 @@ interface TradeItem {
   owned: number
 }
 
+interface FinancialRecord {
+  id: string
+  week: number
+  type: "income" | "expense"
+  category: string
+  amount: number
+  description: string
+  date: Date
+}
+
 interface GameState {
   artist: Artist
   skills: Skills
@@ -97,6 +107,7 @@ interface GameState {
   marketplaceItems: MarketplaceItem[]
   sideHustles: SideHustle[]
   tradeItems: TradeItem[]
+  financialRecords: FinancialRecord[]
   practicePoints: number
   marketingPoints: number
   timeSlots: number
@@ -136,6 +147,7 @@ interface GameContextType {
   showTitheModal: boolean
   setShowTitheModal: (show: boolean) => void
   uploadSongToPlatform: (songId: string, platformId: string) => void
+  addFinancialRecord: (type: "income" | "expense", category: string, amount: number, description: string) => void
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -269,57 +281,107 @@ const initialTradeItems: TradeItem[] = [
 ]
 
 const initialMarketplaceItems: MarketplaceItem[] = [
-  // Instruments
+  // Instruments - Updated with new images
   {
-    id: "guitar-basic",
-    name: "Acoustic Guitar",
-    category: "instrument",
-    price: 500,
-    description: "Basic acoustic guitar for songwriting",
-    image: "/placeholder.svg?height=100&width=100",
-    effect: "+2 Writing skill boost",
-    owned: false,
-  },
-  {
-    id: "mic-pro",
-    name: "Professional Microphone",
-    category: "instrument",
-    price: 1200,
-    description: "High-quality studio microphone",
-    image: "/placeholder.svg?height=100&width=100",
-    effect: "+3 Voice skill boost",
-    owned: false,
-  },
-  {
-    id: "keyboard-midi",
-    name: "MIDI Keyboard",
+    id: "guitar-acoustic",
+    name: "Professional Acoustic Guitar",
     category: "instrument",
     price: 800,
-    description: "Professional MIDI controller",
-    image: "/placeholder.svg?height=100&width=100",
-    effect: "+2 Production skill boost",
+    description: "High-quality acoustic guitar for professional recordings",
+    image: "/images/guitar.avif",
+    effect: "+3 Writing skill boost",
+    owned: false,
+  },
+  {
+    id: "mic-studio",
+    name: "Studio Condenser Microphone",
+    category: "instrument",
+    price: 1500,
+    description: "Professional studio microphone for crystal clear vocals",
+    image: "/images/microphone2.avif",
+    effect: "+4 Voice skill boost",
+    owned: false,
+  },
+  {
+    id: "mic-dynamic",
+    name: "Dynamic Performance Microphone",
+    category: "instrument",
+    price: 900,
+    description: "Durable microphone perfect for live performances",
+    image: "/images/microphone3.avif",
+    effect: "+3 Live Performance boost",
+    owned: false,
+  },
+  {
+    id: "drumset-pro",
+    name: "Professional Drum Set",
+    category: "instrument",
+    price: 3500,
+    description: "Complete professional drum kit for studio and live use",
+    image: "/images/drumset.avif",
+    effect: "+5 Production skill, +3 Live Performance",
+    owned: false,
+  },
+  {
+    id: "launchpad-midi",
+    name: "MIDI Launch Pad Controller",
+    category: "instrument",
+    price: 600,
+    description: "Compact MIDI controller for beat making and live performance",
+    image: "/images/launchpad.avif",
+    effect: "+3 Production skill boost",
+    owned: false,
+  },
+  {
+    id: "trumpet-brass",
+    name: "Professional Trumpet",
+    category: "instrument",
+    price: 1200,
+    description: "High-quality brass trumpet for jazz and classical music",
+    image: "/images/trumpet.avif",
+    effect: "+2 Voice skill, +2 Live Performance",
     owned: false,
   },
 
-  // Properties
+  // Properties - Updated with new images
   {
-    id: "apartment-studio",
-    name: "Studio Apartment",
+    id: "apartment-modern",
+    name: "Modern Studio Apartment",
     category: "property",
-    price: 50000,
-    description: "Small apartment with basic studio setup",
-    image: "/placeholder.svg?height=100&width=100",
-    effect: "+10% practice efficiency",
+    price: 75000,
+    description: "Contemporary apartment with built-in recording space",
+    image: "/images/house1.avif",
+    effect: "+15% practice efficiency, +5% social media engagement",
     owned: false,
   },
   {
     id: "house-suburban",
-    name: "Suburban House",
+    name: "Suburban Family House",
     category: "property",
-    price: 150000,
-    description: "Spacious house with dedicated music room",
-    image: "/placeholder.svg?height=100&width=100",
-    effect: "+20% practice efficiency",
+    price: 180000,
+    description: "Spacious family home with dedicated music room",
+    image: "/images/house2.avif",
+    effect: "+25% practice efficiency, +10% fan attraction",
+    owned: false,
+  },
+  {
+    id: "house-luxury",
+    name: "Luxury Modern House",
+    category: "property",
+    price: 350000,
+    description: "High-end modern house with professional studio",
+    image: "/images/house3.avif",
+    effect: "+40% practice efficiency, +15% streaming boost",
+    owned: false,
+  },
+  {
+    id: "mansion-estate",
+    name: "Luxury Estate Mansion",
+    category: "property",
+    price: 800000,
+    description: "Massive luxury estate with multiple studios and entertainment areas",
+    image: "/images/house4.avif",
+    effect: "+60% practice efficiency, +25% all bonuses",
     owned: false,
   },
 
@@ -408,6 +470,7 @@ const initialGameState: GameState = {
   marketplaceItems: initialMarketplaceItems,
   sideHustles: initialSideHustles,
   tradeItems: initialTradeItems,
+  financialRecords: [],
   practicePoints: 100,
   marketingPoints: 5,
   timeSlots: 7,
@@ -428,6 +491,23 @@ const initialGameState: GameState = {
 export function GameProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameState] = useState<GameState>(initialGameState)
   const [showTitheModal, setShowTitheModal] = useState(false)
+
+  const addFinancialRecord = (type: "income" | "expense", category: string, amount: number, description: string) => {
+    const record: FinancialRecord = {
+      id: Date.now().toString(),
+      week: gameState.week,
+      type,
+      category,
+      amount,
+      description,
+      date: new Date(),
+    }
+
+    setGameState((prev) => ({
+      ...prev,
+      financialRecords: [record, ...prev.financialRecords],
+    }))
+  }
 
   const updateSkill = (skill: keyof Skills, amount: number) => {
     setGameState((prev) => ({
@@ -473,6 +553,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
       earnings: prev.earnings + amount,
       weeklyEarnings: prev.weeklyEarnings + amount,
     }))
+
+    // Add financial record
+    if (amount > 0) {
+      addFinancialRecord("income", "Other", amount, "Earnings added")
+    } else {
+      addFinancialRecord("expense", "Other", Math.abs(amount), "Expense deducted")
+    }
   }
 
   const addFans = (amount: number) => {
@@ -516,6 +603,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       marketplaceItems: prev.marketplaceItems.map((i) => (i.id === itemId ? { ...i, owned: true } : i)),
     }))
 
+    addFinancialRecord("expense", "Marketplace", item.price, `Purchased ${item.name}`)
     return true
   }
 
@@ -611,6 +699,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       ),
     }))
 
+    addFinancialRecord("expense", "Trading", totalCost, `Bought ${quantity}x ${item.name}`)
     return true
   }
 
@@ -626,6 +715,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       tradeItems: prev.tradeItems.map((i) => (i.id === itemId ? { ...i, owned: i.owned - quantity } : i)),
     }))
 
+    addFinancialRecord("income", "Trading", totalEarnings, `Sold ${quantity}x ${item.name}`)
     return true
   }
 
@@ -698,6 +788,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
       timeSlots: 7 - activeHustles.reduce((total, hustle) => total + hustle.timeSlots, 0),
     }))
 
+    // Add financial records
+    if (weeklyHustleEarnings > 0) {
+      addFinancialRecord("income", "Side Hustles", weeklyHustleEarnings, "Weekly side hustle earnings")
+    }
+    if (streamingEarnings > 0) {
+      addFinancialRecord("income", "Streaming", streamingEarnings, "Weekly streaming revenue")
+    }
+    if (totalExpenses > 0) {
+      addFinancialRecord("expense", "Living Expenses", totalExpenses, "Weekly living expenses")
+    }
+
     if (weeklyHustleEarnings + streamingEarnings > 0) {
       setShowTitheModal(true)
     }
@@ -742,6 +843,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         showTitheModal,
         setShowTitheModal,
         uploadSongToPlatform,
+        addFinancialRecord,
       }}
     >
       {children}

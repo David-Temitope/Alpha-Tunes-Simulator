@@ -3,7 +3,18 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Mic, Users, DollarSign, Headphones, TrendingUp, ShoppingCart, User, Briefcase, BarChart3 } from "lucide-react"
+import {
+  Mic,
+  Users,
+  DollarSign,
+  Headphones,
+  TrendingUp,
+  ShoppingCart,
+  User,
+  Briefcase,
+  BarChart3,
+  FileText,
+} from "lucide-react"
 import ArtistCreation from "./components/artist-creation"
 import Dashboard from "./components/dashboard"
 import PracticeSystem from "./components/practice-system"
@@ -13,6 +24,7 @@ import Marketplace from "./components/marketplace"
 import ArtistProfile from "./components/artist-profile"
 import SideHustles from "./components/side-hustles"
 import TradingCenter from "./components/trading-center"
+import FinancialStatements from "./components/financial-statements"
 import TitheModal from "./components/tithe-modal"
 import { GameProvider, useGame } from "./context/game-context"
 
@@ -121,7 +133,7 @@ function GameContent() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsList className="grid w-full grid-cols-4 bg-black/30 backdrop-blur-lg border-white/30 shadow-xl">
+          <TabsList className="grid w-full grid-cols-5 bg-black/30 backdrop-blur-lg border-white/30 shadow-xl">
             <TabsTrigger
               value="marketplace"
               className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg"
@@ -139,6 +151,12 @@ function GameContent() {
               className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg"
             >
               <BarChart3 className="w-4 h-4" />
+            </TabsTrigger>
+            <TabsTrigger
+              value="finances"
+              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg"
+            >
+              <FileText className="w-4 h-4" />
             </TabsTrigger>
             <TabsTrigger
               value="profile"
@@ -174,6 +192,10 @@ function GameContent() {
 
           <TabsContent value="trading">
             <TradingCenter />
+          </TabsContent>
+
+          <TabsContent value="finances">
+            <FinancialStatements />
           </TabsContent>
 
           <TabsContent value="profile">
