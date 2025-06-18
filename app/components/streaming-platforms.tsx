@@ -12,9 +12,11 @@ import { Play, DollarSign, Upload, TrendingUp, Music } from "lucide-react"
 import { useGame } from "../context/game-context"
 
 export default function StreamingPlatforms() {
-  const { gameState, addEarnings, addFans, uploadSong } = useGame()
+  const { gameState, addEarnings, addFans, uploadSong, uploadSongToPlatform } = useGame()
   const [uploadingTo, setUploadingTo] = useState<string | null>(null)
   const [showUploadDialog, setShowUploadDialog] = useState(false)
+  const [showSongSelectDialog, setShowSongSelectDialog] = useState(false)
+  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null)
   const [songData, setSongData] = useState({
     title: "",
     genre: "",
@@ -106,14 +108,27 @@ export default function StreamingPlatforms() {
     },
   ]
 
-  const handleUpload = async (platform: (typeof platforms)[0]) => {
+  const handlePlatformSelect = (platform: (typeof platforms)[0]) => {
     if (!platform.unlocked) return
+    setSelectedPlatform(platform.id)
+    setShowSongSelectDialog(true)
+  }
 
-    setUploadingTo(platform.id)
+  const handleSongUploadToPlatform = async (songId: string) => {
+    if (!selectedPlatform) return
+
+    const platform = platforms.find((p) => p.id === selectedPlatform)
+    if (!platform) return
+
+    setUploadingTo(selectedPlatform)
+    setShowSongSelectDialog(false)
 
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    const skillAverage = Object.values(gameState.skills).reduce((a, b) => a + b, 0) / 4
+    const song = gameState.songs.find((s) => s.id === songId)
+    if (!song) return
+
+    const skillAverage = Object.values(gameState.skills).reduce((a, b) => a + b, 0) / 6
     const baseStreams = Math.floor((skillAverage * 10) / platform.difficulty)
     const randomMultiplier = 0.5 + Math.random() * 1.5
     const streams = Math.floor(baseStreams * randomMultiplier)
@@ -121,10 +136,12 @@ export default function StreamingPlatforms() {
     const earnings = streams * platform.earningsPerStream
     const newFans = Math.floor(streams * 0.1)
 
+    uploadSongToPlatform(songId, selectedPlatform)
     addEarnings(earnings)
     addFans(newFans)
 
     setUploadingTo(null)
+    setSelectedPlatform(null)
   }
 
   const handleSongUpload = () => {
@@ -207,6 +224,45 @@ export default function StreamingPlatforms() {
         </DialogContent>
       </Dialog>
 
+      {/* Song Selection Dialog */}
+      <Dialog open={showSongSelectDialog} onOpenChange={setShowSongSelectDialog}>
+        <DialogContent className="bg-black/90 border-white/20 text-white">
+          <DialogHeader>
+            <DialogTitle>Select Song to Upload</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-60 overflow-y-auto">
+            {gameState.songs
+              .filter((song) => selectedPlatform && !song.uploadedPlatforms.includes(selectedPlatform))
+              .map((song) => (
+                <div
+                  key={song.id}
+                  className="flex items-center gap-3 p-3 bg-white/10 rounded-lg cursor-pointer hover:bg-white/20 transition-colors"
+                  onClick={() => handleSongUploadToPlatform(song.id)}
+                >
+                  <img
+                    src={song.artwork || "/placeholder.svg"}
+                    alt={song.title}
+                    className="w-12 h-12 rounded-lg object-cover"
+                  />
+                  <div className="flex-1">
+                    <h4 className="font-bold">{song.title}</h4>
+                    <p className="text-sm opacity-80">
+                      {song.genre} • {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "0")}
+                    </p>
+                  </div>
+                  <Badge className="bg-yellow-500/20 text-yellow-400">⭐ {song.rating.toFixed(1)}</Badge>
+                </div>
+              ))}
+            {gameState.songs.filter((song) => selectedPlatform && !song.uploadedPlatforms.includes(selectedPlatform))
+              .length === 0 && (
+              <p className="text-center text-white/60 py-4">
+                No songs available for this platform. Create new songs or upload to other platforms first.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Your Songs */}
       {gameState.songs.length > 0 && (
         <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl">
@@ -280,7 +336,7 @@ export default function StreamingPlatforms() {
                 </div>
 
                 <Button
-                  onClick={() => handleUpload(platform)}
+                  onClick={() => handlePlatformSelect(platform)}
                   disabled={!platform.unlocked || uploadingTo === platform.id || gameState.songs.length === 0}
                   size="sm"
                   className={`bg-gradient-to-r ${platform.color} hover:opacity-80 disabled:opacity-50 shadow-lg`}

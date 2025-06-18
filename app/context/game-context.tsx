@@ -28,6 +28,7 @@ interface Song {
   artwork: string
   uploadDate: Date
   streams: { [platform: string]: number }
+  uploadedPlatforms: string[]
   rating: number
 }
 
@@ -122,7 +123,7 @@ interface GameContextType {
   addEarnings: (amount: number) => void
   addFans: (amount: number) => void
   updateMorale: (amount: number) => void
-  uploadSong: (song: Omit<Song, "id" | "uploadDate" | "streams">) => void
+  uploadSong: (song: Omit<Song, "id" | "uploadDate" | "streams" | "uploadedPlatforms">) => void
   purchaseItem: (itemId: string) => boolean
   createSocialPost: (platformId: string, content: string, type: string) => void
   startSideHustle: (hustleId: string) => boolean
@@ -131,6 +132,7 @@ interface GameContextType {
   nextWeek: () => void
   showTitheModal: boolean
   setShowTitheModal: (show: boolean) => void
+  uploadSongToPlatform: (songId: string, platformId: string) => void
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -367,10 +369,10 @@ const initialGameState: GameState = {
   marketingPoints: 5,
   timeSlots: 7,
   energy: 10,
-  earnings: 1000, // Starting money for demo
+  earnings: 0, // Starting money for demo
   weeklyEarnings: 0,
   fans: 0,
-  spiritualMorale: 50,
+  spiritualMorale: 0,
   week: 1,
   unlockedPlatforms: ["SoundVibe", "Amaplay"],
   expenses: {
@@ -444,12 +446,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  const uploadSong = (songData: Omit<Song, "id" | "uploadDate" | "streams">) => {
+  const uploadSong = (songData: Omit<Song, "id" | "uploadDate" | "streams" | "uploadedPlatforms">) => {
     const newSong: Song = {
       ...songData,
       id: Date.now().toString(),
       uploadDate: new Date(),
       streams: {},
+      uploadedPlatforms: [],
     }
 
     setGameState((prev) => ({
@@ -595,6 +598,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const uploadSongToPlatform = (songId: string, platformId: string) => {
+    setGameState((prev) => ({
+      ...prev,
+      songs: prev.songs.map((song) =>
+        song.id === songId
+          ? {
+              ...song,
+              uploadedPlatforms: [...song.uploadedPlatforms, platformId],
+              streams: { ...song.streams, [platformId]: 0 },
+            }
+          : song,
+      ),
+    }))
+  }
+
   return (
     <GameContext.Provider
       value={{
@@ -617,6 +635,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         nextWeek,
         showTitheModal,
         setShowTitheModal,
+        uploadSongToPlatform,
       }}
     >
       {children}

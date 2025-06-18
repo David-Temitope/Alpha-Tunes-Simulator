@@ -18,6 +18,7 @@ export default function ArtistCreation() {
     stageName: "",
     email: "",
     genre: "",
+    profileImage: "/placeholder.svg?height=150&width=150",
   })
 
   const genres = ["Hip-Hop", "Gospel", "Afrobeat", "Pop", "R&B", "Rock", "Electronic", "Country"]
@@ -27,7 +28,10 @@ export default function ArtistCreation() {
     if (formData.originalName && formData.stageName && formData.email && formData.genre) {
       setGameState({
         ...gameState,
-        artist: formData,
+        artist: {
+          ...formData,
+          bio: "",
+        },
       })
     }
   }
@@ -80,6 +84,35 @@ export default function ArtistCreation() {
                 placeholder="your@email.com"
                 required
               />
+            </div>
+
+            <div>
+              <Label htmlFor="photo">Artist Photo</Label>
+              <Input
+                id="photo"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    const reader = new FileReader()
+                    reader.onload = (e) => {
+                      setFormData({ ...formData, profileImage: e.target?.result as string })
+                    }
+                    reader.readAsDataURL(file)
+                  }
+                }}
+                className="bg-white/10 border-white/20 text-white file:bg-white/20 file:border-0 file:text-white file:rounded"
+              />
+              {formData.profileImage && (
+                <div className="mt-2 flex justify-center">
+                  <img
+                    src={formData.profileImage || "/placeholder.svg"}
+                    alt="Artist preview"
+                    className="w-16 h-16 rounded-full object-cover border-2 border-white/20"
+                  />
+                </div>
+              )}
             </div>
 
             <div>
