@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Mic, Users, DollarSign, Headphones, TrendingUp, ShoppingCart, User, Briefcase, BarChart3 } from "lucide-react"
@@ -19,6 +19,27 @@ import { GameProvider, useGame } from "./context/game-context"
 function GameContent() {
   const { gameState, showTitheModal } = useGame()
   const [activeTab, setActiveTab] = useState("dashboard")
+
+  // Background music
+  useEffect(() => {
+    const audio = new Audio("/audio/hope.mp3")
+    audio.loop = true
+    audio.volume = 0.3 // Not too loud
+
+    const playAudio = () => {
+      audio.play().catch(console.error)
+    }
+
+    // Play on user interaction
+    document.addEventListener("click", playAudio, { once: true })
+    document.addEventListener("keydown", playAudio, { once: true })
+
+    return () => {
+      audio.pause()
+      document.removeEventListener("click", playAudio)
+      document.removeEventListener("keydown", playAudio)
+    }
+  }, [])
 
   if (!gameState.artist.stageName) {
     return <ArtistCreation />

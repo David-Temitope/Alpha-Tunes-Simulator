@@ -30,6 +30,8 @@ interface Song {
   streams: { [platform: string]: number }
   uploadedPlatforms: string[]
   rating: number
+  productionCost: number
+  qualityMultiplier: number
 }
 
 interface SocialPlatform {
@@ -127,6 +129,7 @@ interface GameContextType {
   purchaseItem: (itemId: string) => boolean
   createSocialPost: (platformId: string, content: string, type: string) => void
   startSideHustle: (hustleId: string) => boolean
+  quitSideHustle: (hustleId: string) => boolean
   buyTradeItem: (itemId: string, quantity: number) => boolean
   sellTradeItem: (itemId: string, quantity: number) => boolean
   nextWeek: () => void
@@ -320,25 +323,65 @@ const initialMarketplaceItems: MarketplaceItem[] = [
     owned: false,
   },
 
-  // Vehicles
+  // Vehicles - Updated with new images
   {
     id: "car-sedan",
     name: "Sedan Car",
     category: "vehicle",
     price: 25000,
     description: "Reliable transportation for gigs",
-    image: "/placeholder.svg?height=100&width=100",
+    image: "/images/car2.avif",
     effect: "+5% tour earnings",
     owned: false,
   },
   {
-    id: "car-luxury",
+    id: "car-luxury-sports",
     name: "Luxury Sports Car",
     category: "vehicle",
-    price: 100000,
-    description: "High-end sports car for style",
-    image: "/placeholder.svg?height=100&width=100",
+    price: 85000,
+    description: "High-end sports car for style and speed",
+    image: "/images/car1.avif",
     effect: "+15% fan attraction",
+    owned: false,
+  },
+  {
+    id: "car-premium-coupe",
+    name: "Premium Coupe",
+    category: "vehicle",
+    price: 65000,
+    description: "Stylish coupe perfect for city cruising",
+    image: "/images/car3.avif",
+    effect: "+10% social media engagement",
+    owned: false,
+  },
+  {
+    id: "car-supercar",
+    name: "Supercar",
+    category: "vehicle",
+    price: 200000,
+    description: "Ultimate luxury supercar for maximum impact",
+    image: "/images/car6.avif",
+    effect: "+25% fan attraction, +10% streaming boost",
+    owned: false,
+  },
+  {
+    id: "car-luxury-suv",
+    name: "Luxury SUV",
+    category: "vehicle",
+    price: 120000,
+    description: "Spacious luxury SUV for touring with crew",
+    image: "/images/car7.avif",
+    effect: "+20% tour earnings, +5% team efficiency",
+    owned: false,
+  },
+  {
+    id: "car-executive",
+    name: "Executive Sedan",
+    category: "vehicle",
+    price: 95000,
+    description: "Professional executive vehicle for business meetings",
+    image: "/images/car8.avif",
+    effect: "+15% business opportunities, +8% fan respect",
     owned: false,
   },
 ]
@@ -369,7 +412,7 @@ const initialGameState: GameState = {
   marketingPoints: 5,
   timeSlots: 7,
   energy: 10,
-  earnings: 0, // Starting money for demo
+  earnings: 0,
   weeklyEarnings: 0,
   fans: 0,
   spiritualMorale: 0,
@@ -487,12 +530,31 @@ export function GameProvider({ children }: { children: ReactNode }) {
       shares: Math.floor(Math.random() * 20),
     }
 
-    setGameState((prev) => ({
-      ...prev,
-      socialPlatforms: prev.socialPlatforms.map((platform) =>
-        platform.id === platformId ? { ...platform, posts: [newPost, ...platform.posts.slice(0, 9)] } : platform,
-      ),
-    }))
+    // Realistic social media growth
+    const platform = gameState.socialPlatforms.find((p) => p.id === platformId)
+    if (platform) {
+      const baseGrowth = Math.floor(Math.random() * 5) + 1 // 1-5 followers per post
+      const engagementBonus = Math.floor(newPost.likes / 20) // Bonus based on likes
+      const followerGrowth = Math.min(baseGrowth + engagementBonus, 15) // Cap at 15 per post
+
+      const engagementIncrease = Math.random() * 0.5 // 0-0.5% increase
+      const influenceIncrease = Math.floor(followerGrowth / 3) // Influence grows slower
+
+      setGameState((prev) => ({
+        ...prev,
+        socialPlatforms: prev.socialPlatforms.map((p) =>
+          p.id === platformId
+            ? {
+                ...p,
+                posts: [newPost, ...p.posts.slice(0, 9)],
+                followers: p.followers + followerGrowth,
+                engagement: Math.min(p.engagement + engagementIncrease, 100),
+                influence: p.influence + influenceIncrease,
+              }
+            : p,
+        ),
+      }))
+    }
 
     spendMarketingPoints(1)
   }
@@ -508,6 +570,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
       sideHustles: prev.sideHustles.map((h) => (h.id === hustleId ? { ...h, active: true } : h)),
       timeSlots: prev.timeSlots - hustle.timeSlots,
       energy: prev.energy - hustle.energyCost,
+    }))
+
+    return true
+  }
+
+  const quitSideHustle = (hustleId: string): boolean => {
+    const hustle = gameState.sideHustles.find((h) => h.id === hustleId)
+    if (!hustle || !hustle.active) {
+      return false
+    }
+
+    setGameState((prev) => ({
+      ...prev,
+      sideHustles: prev.sideHustles.map((h) => (h.id === hustleId ? { ...h, active: false } : h)),
+      timeSlots: prev.timeSlots + hustle.timeSlots,
     }))
 
     return true
@@ -553,7 +630,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }
 
   const nextWeek = () => {
-    // Process side hustles
+    // Process side hustles - only active ones continue
     const activeHustles = gameState.sideHustles.filter((h) => h.active)
     let weeklyHustleEarnings = 0
 
@@ -564,6 +641,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (hustle.skillGain) {
         updateSkill(hustle.skillGain.skill, hustle.skillGain.amount)
       }
+    })
+
+    // Calculate streaming revenue
+    let streamingEarnings = 0
+    const platformRates = {
+      SoundVibe: 0.1,
+      Amaplay: 0.02,
+      TuneJam: 0.5,
+      StreamTunes: 2.0,
+      BeatFlow: 0.25,
+      Hypefy: 3.0,
+      ChartTopper: 4.0,
+      CoreBeats: 5.0,
+    }
+
+    gameState.songs.forEach((song) => {
+      song.uploadedPlatforms.forEach((platform) => {
+        // Generate streams based on song quality and random factors
+        const baseStreams = Math.floor(Math.random() * 100 * song.qualityMultiplier)
+        const newStreams = Math.max(0, baseStreams + (song.streams[platform] || 0) * 0.1) // Growth factor
+
+        const rate = platformRates[platform as keyof typeof platformRates] || 0.1
+        const earnings = newStreams * rate
+        streamingEarnings += earnings
+
+        // Update song streams
+        song.streams[platform] = (song.streams[platform] || 0) + newStreams
+      })
     })
 
     // Update trade item prices
@@ -585,15 +690,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
       week: prev.week + 1,
       practicePoints: 100,
       marketingPoints: 5,
-      timeSlots: 7,
       energy: 10,
-      earnings: prev.earnings + weeklyHustleEarnings - totalExpenses,
-      weeklyEarnings: weeklyHustleEarnings,
-      sideHustles: prev.sideHustles.map((h) => ({ ...h, active: false })),
+      earnings: prev.earnings + weeklyHustleEarnings + streamingEarnings - totalExpenses,
+      weeklyEarnings: weeklyHustleEarnings + streamingEarnings,
       tradeItems: updatedTradeItems,
+      // Don't reset timeSlots - they depend on active side hustles
+      timeSlots: 7 - activeHustles.reduce((total, hustle) => total + hustle.timeSlots, 0),
     }))
 
-    if (gameState.weeklyEarnings > 0) {
+    if (weeklyHustleEarnings + streamingEarnings > 0) {
       setShowTitheModal(true)
     }
   }
@@ -630,6 +735,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         purchaseItem,
         createSocialPost,
         startSideHustle,
+        quitSideHustle,
         buyTradeItem,
         sellTradeItem,
         nextWeek,

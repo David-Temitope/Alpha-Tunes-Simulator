@@ -7,7 +7,7 @@ import { Briefcase, Clock, Zap, DollarSign, TrendingUp, AlertTriangle, Home } fr
 import { useGame } from "../context/game-context"
 
 export default function SideHustles() {
-  const { gameState, startSideHustle } = useGame()
+  const { gameState, startSideHustle, quitSideHustle } = useGame()
 
   const hustleIcons = {
     waiter: "🍽️",
@@ -189,13 +189,27 @@ export default function SideHustles() {
                     </div>
 
                     {/* Action Button */}
-                    <Button
-                      onClick={() => handleStartHustle(hustle.id)}
-                      disabled={!canStart || isActive}
-                      className={`w-full bg-gradient-to-r ${hustleColors[hustle.id as keyof typeof hustleColors]} hover:opacity-80 disabled:opacity-50 shadow-lg`}
-                    >
-                      {isActive ? "Working..." : canStart ? "Start Job" : "Can't Work"}
-                    </Button>
+                    {isActive ? (
+                      <div className="space-y-2">
+                        <Button
+                          onClick={() => quitSideHustle(hustle.id)}
+                          className="w-full bg-gradient-to-r from-red-500 to-pink-500 hover:opacity-80 shadow-lg"
+                        >
+                          Quit Job
+                        </Button>
+                        <p className="text-xs opacity-60 text-center">
+                          Quitting will free up {hustle.timeSlots} time slots
+                        </p>
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={() => handleStartHustle(hustle.id)}
+                        disabled={!canStart}
+                        className={`w-full bg-gradient-to-r ${hustleColors[hustle.id as keyof typeof hustleColors]} hover:opacity-80 disabled:opacity-50 shadow-lg`}
+                      >
+                        {canStart ? "Start Job" : "Can't Work"}
+                      </Button>
+                    )}
 
                     {!canStart && !isActive && (
                       <p className="text-xs opacity-60 mt-2 text-center">
