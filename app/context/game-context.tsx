@@ -860,19 +860,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
       content,
       type,
       timestamp: new Date(),
-      likes: Math.floor(Math.random() * 100),
-      shares: Math.floor(Math.random() * 20),
+      likes: Math.floor(Math.random() * 50) + 5, // 5-55 likes initially
+      shares: Math.floor(Math.random() * 10) + 1, // 1-11 shares initially
     }
 
-    // Realistic social media growth
+    // More realistic social media growth based on current stats
     const platform = gameState.socialPlatforms.find((p) => p.id === platformId)
     if (platform) {
-      const baseGrowth = Math.floor(Math.random() * 5) + 1 // 1-5 followers per post
-      const engagementBonus = Math.floor(newPost.likes / 20) // Bonus based on likes
-      const followerGrowth = Math.min(baseGrowth + engagementBonus, 15) // Cap at 15 per post
+      // Base growth is much smaller and depends on current followers
+      const followerMultiplier = Math.max(0.001, platform.followers / 10000) // Higher followers = slightly better growth
+      const baseGrowth = Math.floor(Math.random() * 3) + 1 // 1-3 base followers
+      const qualityBonus = type === "song_promo" ? 2 : type === "behind_scenes" ? 1.5 : 1
+      const engagementBonus = Math.floor(newPost.likes / 50) // Very small bonus from likes
 
-      const engagementIncrease = Math.random() * 0.5 // 0-0.5% increase
-      const influenceIncrease = Math.floor(followerGrowth / 3) // Influence grows slower
+      const followerGrowth = Math.floor(baseGrowth * followerMultiplier * qualityBonus + engagementBonus)
+      const maxGrowth = Math.max(1, Math.min(followerGrowth, 8)) // Cap at 8 followers per post
+
+      // Engagement grows very slowly
+      const engagementIncrease = Math.random() * 0.1 // 0-0.1% increase
+      const influenceIncrease = Math.floor(maxGrowth / 5) // Influence grows even slower
 
       setGameStateWithChecks((prev) => ({
         ...prev,
@@ -881,7 +887,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             ? {
                 ...p,
                 posts: [newPost, ...p.posts.slice(0, 9)],
-                followers: p.followers + followerGrowth,
+                followers: p.followers + maxGrowth,
                 engagement: Math.min(p.engagement + engagementIncrease, 100),
                 influence: p.influence + influenceIncrease,
               }
@@ -1023,19 +1029,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
       CoreBeats: 5.0,
     }
 
-    gameState.songs.forEach((song) => {
+    const updatedSongs = gameState.songs.map((song) => {
+      const updatedSong = { ...song }
       song.uploadedPlatforms.forEach((platform) => {
         // Generate streams based on song quality and random factors
         const baseStreams = Math.floor(Math.random() * 100 * song.qualityMultiplier)
-        const newStreams = Math.max(0, baseStreams + (song.streams[platform] || 0) * 0.1) // Growth factor
+        const newStreams = Math.max(0, baseStreams + (song.streams[platform] || 0) * 0.1)
 
         const rate = platformRates[platform as keyof typeof platformRates] || 0.1
         const earnings = newStreams * rate
         streamingEarnings += earnings
 
         // Update song streams
-        song.streams[platform] = (song.streams[platform] || 0) + newStreams
+        updatedSong.streams[platform] = (song.streams[platform] || 0) + newStreams
       })
+      return updatedSong
     })
 
     // Update trade item prices
@@ -1064,20 +1072,31 @@ export function GameProvider({ children }: { children: ReactNode }) {
       generateChatMessage()
     }
 
+    // Apply all updates at once
     setGameStateWithChecks((prev) => ({
       ...prev,
       week: prev.week + 1,
-      practicePoints: 100,
-      marketingPoints: 5,
+      practicePoints: 100, // Reset to 100 every week
+      marketingPoints: 5, // Reset to 5 every week
       energy: 10,
       earnings: prev.earnings + weeklyHustleEarnings + streamingEarnings - totalExpenses - totalTaxes,
       weeklyEarnings: weeklyHustleEarnings + streamingEarnings,
       weeklyTaxes: totalTaxes,
       tradeItems: updatedTradeItems,
+      songs: updatedSongs,
       timeSlots: 7 - activeHustles.reduce((total, hustle) => total + hustle.timeSlots, 0),
     }))
 
-    // Add tax record
+    // Add financial records
+    if (weeklyHustleEarnings > 0) {
+      addFinancialRecord("income", "Side Hustles", weeklyHustleEarnings, "Weekly side hustle earnings")
+    }
+    if (streamingEarnings > 0) {
+      addFinancialRecord("income", "Streaming", streamingEarnings, "Weekly streaming revenue")
+    }
+    if (totalExpenses > 0) {
+      addFinancialRecord("expense", "Living", totalExpenses, "Weekly living expenses")
+    }
     if (totalTaxes > 0) {
       addFinancialRecord("expense", "Taxes", totalTaxes, "Weekly taxes (possessions + earnings)")
     }

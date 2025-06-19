@@ -1,241 +1,314 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { DollarSign, Users, Heart, Star, TrendingUp, Clock, Music, Zap, Briefcase, BarChart3 } from "lucide-react"
+import {
+  TrendingUp,
+  Users,
+  DollarSign,
+  Music,
+  Calendar,
+  Award,
+  Zap,
+  Clock,
+  Heart,
+  Building2,
+  Target,
+} from "lucide-react"
 import { useGame } from "../context/game-context"
 
 export default function Dashboard() {
   const { gameState, nextWeek } = useGame()
 
-  const skillAverage = Object.values(gameState.skills).reduce((a, b) => a + b, 0) / 6
-  const unlockedPlatforms = gameState.socialPlatforms.filter((p) => p.unlocked).length
-  const activeHustles = gameState.sideHustles.filter((h) => h.active).length
-  const portfolioValue = gameState.tradeItems.reduce((total, item) => total + item.owned * item.currentPrice, 0)
+  const totalStreams = gameState.songs.reduce((total, song) => {
+    return total + Object.values(song.streams).reduce((songTotal, streams) => songTotal + streams, 0)
+  }, 0)
+
+  const totalSocialFollowers = gameState.socialPlatforms.reduce((total, platform) => total + platform.followers, 0)
+
+  const activeHustles = gameState.sideHustles.filter((h) => h.active)
+  const weeklyHustleIncome = activeHustles.reduce((total, hustle) => {
+    return total + (hustle.weeklyPay.min + hustle.weeklyPay.max) / 2
+  }, 0)
+
+  const weeklyExpenses = gameState.expenses.rent + gameState.expenses.food + gameState.expenses.transportation
+
+  const netWeeklyIncome = weeklyHustleIncome - weeklyExpenses
+
+  // Calculate skill average
+  const skillAverage =
+    Object.values(gameState.skills).reduce((sum, skill) => sum + skill, 0) / Object.keys(gameState.skills).length
 
   return (
     <div className="space-y-4">
-      {/* Stats Overview with 3D styling */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl transform hover:scale-105 transition-all duration-300">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-400 drop-shadow-lg" />
-              <div>
-                <p className="text-sm opacity-80">Total Earnings</p>
-                <p className="font-bold text-green-400 drop-shadow-lg">${gameState.earnings.toLocaleString()}</p>
+      {/* Week Progress */}
+      <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-blue-400" />
+            Week {gameState.week} Progress
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="text-center p-3 bg-blue-900/30 rounded-lg border border-blue-400/20">
+              <div className="flex items-center justify-center gap-1 text-lg font-bold text-blue-400">
+                <Zap className="w-5 h-5" />
+                {gameState.practicePoints}/100
               </div>
+              <p className="text-xs text-blue-200">Practice Points</p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl transform hover:scale-105 transition-all duration-300">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-400 drop-shadow-lg" />
-              <div>
-                <p className="text-sm opacity-80">Fans</p>
-                <p className="font-bold text-blue-400 drop-shadow-lg">{gameState.fans.toLocaleString()}</p>
+            <div className="text-center p-3 bg-blue-900/30 rounded-lg border border-blue-400/20">
+              <div className="flex items-center justify-center gap-1 text-lg font-bold text-yellow-400">
+                <Clock className="w-5 h-5" />
+                {gameState.timeSlots}/7
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Week & Resources with enhanced 3D styling */}
-      <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl transform hover:scale-105 transition-all duration-300">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-yellow-400 drop-shadow-lg" />
-              <span className="font-bold drop-shadow-lg">Week {gameState.week}</span>
-            </div>
-            <Button
-              onClick={nextWeek}
-              size="sm"
-              className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
-            >
-              Next Week
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm flex items-center gap-1">
-                  <Zap className="w-4 h-4 text-yellow-400" />
-                  Practice Points
-                </span>
-                <span className="font-bold">{gameState.practicePoints}/100</span>
-              </div>
-              <Progress value={gameState.practicePoints} className="h-2" />
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm flex items-center gap-1">
-                  <TrendingUp className="w-4 h-4 text-purple-400" />
-                  Marketing Points
-                </span>
-                <span className="font-bold">{gameState.marketingPoints}/5</span>
-              </div>
-              <Progress value={(gameState.marketingPoints / 5) * 100} className="h-2" />
+              <p className="text-xs text-blue-200">Time Slots</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm flex items-center gap-1">
-                  <Clock className="w-4 h-4 text-blue-400" />
-                  Time Slots
-                </span>
-                <span className="font-bold">{gameState.timeSlots}/7</span>
-              </div>
-              <Progress value={(gameState.timeSlots / 7) * 100} className="h-2" />
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm flex items-center gap-1">
-                  <Zap className="w-4 h-4 text-green-400" />
-                  Energy
-                </span>
-                <span className="font-bold">{gameState.energy}/10</span>
-              </div>
-              <Progress value={(gameState.energy / 10) * 100} className="h-2" />
-            </div>
-          </div>
+          <Button
+            onClick={nextWeek}
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 shadow-lg"
+          >
+            Advance to Week {gameState.week + 1}
+          </Button>
         </CardContent>
       </Card>
 
-      {/* Spiritual Morale with enhanced styling */}
-      <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl transform hover:scale-105 transition-all duration-300">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Heart className="w-5 h-5 text-red-400 drop-shadow-lg" />
-            <span className="font-bold drop-shadow-lg">Spiritual Morale</span>
-          </div>
-          <Progress value={gameState.spiritualMorale} className="h-3 mb-2" />
-          <p className="text-xs opacity-80">
-            {gameState.spiritualMorale >= 80
-              ? "✨ Blessed - Expect good fortune!"
-              : gameState.spiritualMorale >= 60
-                ? "😊 Good - Things are looking up"
-                : gameState.spiritualMorale >= 40
-                  ? "😐 Neutral - Stay consistent"
-                  : gameState.spiritualMorale >= 20
-                    ? "😟 Low - Consider your choices"
-                    : "😰 Struggling - Seek guidance"}
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl transform hover:scale-105 transition-all duration-300">
+      {/* Key Metrics */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
           <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center gap-1 text-2xl font-bold text-purple-400 mb-2">
+            <div className="flex items-center justify-center gap-1 text-2xl font-bold text-green-400 mb-1">
+              <DollarSign className="w-6 h-6" />
+              {gameState.earnings.toLocaleString()}
+            </div>
+            <p className="text-xs text-blue-200">Total Earnings</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center gap-1 text-2xl font-bold text-blue-400 mb-1">
+              <Users className="w-6 h-6" />
+              {gameState.fans.toLocaleString()}
+            </div>
+            <p className="text-xs text-blue-200">Total Fans</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center gap-1 text-2xl font-bold text-purple-400 mb-1">
               <Music className="w-6 h-6" />
               {gameState.songs.length}
             </div>
-            <p className="text-sm opacity-80">Songs Released</p>
+            <p className="text-xs text-blue-200">Songs Created</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl transform hover:scale-105 transition-all duration-300">
+        <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
           <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center gap-1 text-2xl font-bold text-cyan-400 mb-2">
-              <Users className="w-6 h-6" />
-              {unlockedPlatforms}
+            <div className="flex items-center justify-center gap-1 text-2xl font-bold text-pink-400 mb-1">
+              <TrendingUp className="w-6 h-6" />
+              {totalStreams.toLocaleString()}
             </div>
-            <p className="text-sm opacity-80">Social Platforms</p>
+            <p className="text-xs text-blue-200">Total Streams</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* New Stats for Side Hustles and Trading */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl transform hover:scale-105 transition-all duration-300">
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center gap-1 text-2xl font-bold text-orange-400 mb-2">
-              <Briefcase className="w-6 h-6" />
-              {activeHustles}
-            </div>
-            <p className="text-sm opacity-80">Active Jobs</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl transform hover:scale-105 transition-all duration-300">
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center gap-1 text-2xl font-bold text-green-400 mb-2">
-              <BarChart3 className="w-6 h-6" />${portfolioValue.toFixed(0)}
-            </div>
-            <p className="text-sm opacity-80">Portfolio Value</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Skills Overview with enhanced 3D styling */}
-      <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl transform hover:scale-105 transition-all duration-300">
+      {/* Weekly Financial Overview */}
+      <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Star className="w-5 h-5 text-yellow-400 drop-shadow-lg" />
+            <DollarSign className="w-5 h-5 text-green-400" />
+            Weekly Financial Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-blue-200">Side Hustle Income:</span>
+            <span className="font-bold text-green-400">+${weeklyHustleIncome.toFixed(0)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-blue-200">Living Expenses:</span>
+            <span className="font-bold text-red-400">-${weeklyExpenses}</span>
+          </div>
+          <hr className="border-blue-400/20" />
+          <div className="flex justify-between items-center font-bold">
+            <span className="text-white">Net Weekly:</span>
+            <span className={netWeeklyIncome >= 0 ? "text-green-400" : "text-red-400"}>
+              {netWeeklyIncome >= 0 ? "+" : ""}${netWeeklyIncome.toFixed(0)}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Skills Overview */}
+      <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="w-5 h-5 text-yellow-400" />
             Skills Overview
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {Object.entries(gameState.skills).map(([skill, level]) => (
-            <div key={skill}>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-sm capitalize">{skill.replace(/([A-Z])/g, " $1").trim()}</span>
-                <Badge variant="secondary" className="bg-white/10 text-white shadow-lg">
-                  {level.toFixed(1)}
-                </Badge>
+            <div key={skill} className="space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-blue-200 capitalize">{skill.replace(/([A-Z])/g, " $1").trim()}</span>
+                <span className="text-sm font-bold text-white">{level.toFixed(1)}</span>
               </div>
               <Progress value={level} className="h-2" />
             </div>
           ))}
+          <div className="mt-3 p-2 bg-blue-900/30 rounded-lg border border-blue-400/20">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-blue-200">Average Skill Level:</span>
+              <span className="font-bold text-yellow-400">{skillAverage.toFixed(1)}</span>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Recent Activity with enhanced styling */}
-      <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl transform hover:scale-105 transition-all duration-300">
+      {/* Social Media Overview */}
+      <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-green-400 drop-shadow-lg" />
-            Recent Activity
+            <Users className="w-5 h-5 text-blue-400" />
+            Social Media Overview
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2 text-sm">
-            <p className="opacity-80 flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-              Practiced voice training (+0.5 skill)
-            </p>
-            <p className="opacity-80 flex items-center gap-2">
-              <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-              Posted on {gameState.socialPlatforms.find((p) => p.unlocked)?.name || "social media"}
-            </p>
-            <p className="opacity-80 flex items-center gap-2">
-              <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
-              Gained {Math.floor(Math.random() * 20 + 5)} new fans this week
-            </p>
-            <p className="opacity-80 flex items-center gap-2">
-              <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
-              Earned ${Math.floor(gameState.weeklyEarnings)} from streaming
-            </p>
-            {activeHustles > 0 && (
-              <p className="opacity-80 flex items-center gap-2">
-                <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
-                Working {activeHustles} side job{activeHustles > 1 ? "s" : ""} this week
-              </p>
-            )}
-            {portfolioValue > 0 && (
-              <p className="opacity-80 flex items-center gap-2">
-                <span className="w-2 h-2 bg-cyan-400 rounded-full"></span>
-                Trading portfolio worth ${portfolioValue.toFixed(0)}
-              </p>
-            )}
+          <div className="grid grid-cols-2 gap-4 mb-3">
+            <div className="text-center p-3 bg-blue-900/30 rounded-lg border border-blue-400/20">
+              <div className="text-lg font-bold text-blue-400">{totalSocialFollowers.toLocaleString()}</div>
+              <p className="text-xs text-blue-200">Total Followers</p>
+            </div>
+            <div className="text-center p-3 bg-blue-900/30 rounded-lg border border-blue-400/20">
+              <div className="text-lg font-bold text-green-400">
+                {gameState.socialPlatforms.filter((p) => p.unlocked).length}/7
+              </div>
+              <p className="text-xs text-blue-200">Platforms Unlocked</p>
+            </div>
           </div>
+          <div className="space-y-2">
+            {gameState.socialPlatforms
+              .filter((p) => p.unlocked)
+              .slice(0, 3)
+              .map((platform) => (
+                <div key={platform.id} className="flex justify-between items-center text-sm">
+                  <span className="text-blue-200">{platform.name}:</span>
+                  <span className="text-white">{platform.followers.toLocaleString()} followers</span>
+                </div>
+              ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Active Side Hustles */}
+      {activeHustles.length > 0 && (
+        <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-purple-400" />
+              Active Side Hustles
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {activeHustles.map((hustle) => (
+                <div
+                  key={hustle.id}
+                  className="flex justify-between items-center p-2 bg-blue-900/30 rounded-lg border border-blue-400/20"
+                >
+                  <span className="text-sm text-blue-200">{hustle.title}</span>
+                  <Badge className="bg-green-500/20 text-green-400 border-green-400/30">
+                    ${hustle.weeklyPay.min}-${hustle.weeklyPay.max}/week
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Spiritual Morale */}
+      <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="w-5 h-5 text-pink-400" />
+            Spiritual Morale
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-blue-200">Current Level:</span>
+              <span className="font-bold text-pink-400">{gameState.spiritualMorale}/100</span>
+            </div>
+            <Progress value={gameState.spiritualMorale} className="h-3" />
+            <p className="text-xs text-blue-200">
+              {gameState.spiritualMorale >= 80
+                ? "Blessed! Expect good fortune."
+                : gameState.spiritualMorale >= 50
+                  ? "Balanced spiritual state."
+                  : "Consider tithing to improve morale."}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Record Label Status */}
+      <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Award className="w-5 h-5 text-yellow-400" />
+            Career Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-blue-200">Record Label:</span>
+              <span className="font-bold text-white">{gameState.recordLabel || "Independent"}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-blue-200">Career Week:</span>
+              <span className="font-bold text-blue-400">Week {gameState.week}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-blue-200">Industry Status:</span>
+              <span className="font-bold text-yellow-400">
+                {gameState.fans >= 100000
+                  ? "Superstar"
+                  : gameState.fans >= 50000
+                    ? "Celebrity"
+                    : gameState.fans >= 10000
+                      ? "Rising Star"
+                      : gameState.fans >= 1000
+                        ? "Local Artist"
+                        : "Beginner"}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Tips */}
+      <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
+        <CardContent className="p-4">
+          <h3 className="font-bold text-white mb-2">💡 Weekly Tips</h3>
+          <ul className="text-sm space-y-1 text-blue-200">
+            <li>• Use all practice points each week for skill growth</li>
+            <li>• Post on social media to grow your fanbase</li>
+            <li>• Balance side hustles with music career development</li>
+            <li>• Consider tithing 10% of earnings for spiritual blessings</li>
+            <li>• Upload songs to streaming platforms for passive income</li>
+          </ul>
         </CardContent>
       </Card>
     </div>

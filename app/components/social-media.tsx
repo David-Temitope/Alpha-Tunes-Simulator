@@ -79,9 +79,9 @@ export default function SocialMedia() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-6 border border-slate-700">
+      <div className="bg-gradient-to-r from-blue-950 to-blue-900 rounded-xl p-6 border border-blue-400/30 shadow-xl">
         <h2 className="text-2xl font-bold text-white mb-2">Social Media Hub</h2>
-        <p className="text-slate-300">Build your fanbase and engage with your audience</p>
+        <p className="text-blue-200">Build your fanbase and engage with your audience</p>
       </div>
 
       <Tabs defaultValue="platforms" className="w-full">
@@ -96,7 +96,7 @@ export default function SocialMedia() {
 
         <TabsContent value="platforms">
           {/* Marketing Points Header */}
-          <Card className="bg-slate-900 border-slate-700 mb-6">
+          <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 mb-6 shadow-xl">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -105,12 +105,12 @@ export default function SocialMedia() {
                 </div>
                 <span className="text-lg font-bold text-yellow-400">{gameState.marketingPoints}/5</span>
               </div>
-              <p className="text-xs text-slate-400 mt-1">Resets every week • 1 point per post</p>
+              <p className="text-xs text-blue-200 mt-1">Resets every week • 1 point per post</p>
             </CardContent>
           </Card>
 
           {/* Platform Selection */}
-          <Card className="bg-slate-900 border-slate-700 mb-6">
+          <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 mb-6 shadow-xl">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-400" />
@@ -126,8 +126,8 @@ export default function SocialMedia() {
                     disabled={!platform.unlocked}
                     className={`h-auto p-3 ${
                       selectedPlatform === platform.id
-                        ? `bg-gradient-to-r ${platformColors[platform.id as keyof typeof platformColors]} shadow-lg`
-                        : "bg-slate-800 hover:bg-slate-700 border border-slate-600"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-800 shadow-lg"
+                        : "bg-blue-900/50 hover:bg-blue-800/50 border border-blue-400/30"
                     } ${!platform.unlocked ? "opacity-50" : ""}`}
                   >
                     <div className="text-center">
@@ -135,7 +135,7 @@ export default function SocialMedia() {
                         {platform.unlocked ? platformIcons[platform.id as keyof typeof platformIcons] : "🔒"}
                       </div>
                       <div className="text-sm font-bold text-white">{platform.name}</div>
-                      <div className="text-xs text-slate-300">{platform.followers.toLocaleString()} followers</div>
+                      <div className="text-xs text-blue-200">{platform.followers.toLocaleString()} followers</div>
                     </div>
                   </Button>
                 ))}
@@ -145,7 +145,7 @@ export default function SocialMedia() {
 
           {/* Current Platform Details */}
           {currentPlatform && (
-            <Card className="bg-slate-900 border-slate-700">
+            <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 shadow-xl">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <span className="text-2xl">{platformIcons[currentPlatform.id as keyof typeof platformIcons]}</span>
@@ -156,26 +156,26 @@ export default function SocialMedia() {
                 {currentPlatform.unlocked ? (
                   <>
                     <div className="grid grid-cols-3 gap-4 mb-4">
-                      <div className="text-center p-3 bg-slate-800 rounded-lg">
+                      <div className="text-center p-3 bg-blue-900/50 rounded-lg border border-blue-400/20">
                         <div className="flex items-center justify-center gap-1 text-lg font-bold text-blue-400">
                           <Users className="w-5 h-5" />
                           {currentPlatform.followers.toLocaleString()}
                         </div>
-                        <p className="text-xs text-slate-400">Followers</p>
+                        <p className="text-xs text-blue-200">Followers</p>
                       </div>
-                      <div className="text-center p-3 bg-slate-800 rounded-lg">
+                      <div className="text-center p-3 bg-blue-900/50 rounded-lg border border-blue-400/20">
                         <div className="flex items-center justify-center gap-1 text-lg font-bold text-pink-400">
                           <Heart className="w-5 h-5" />
                           {currentPlatform.engagement.toFixed(1)}%
                         </div>
-                        <p className="text-xs text-slate-400">Engagement</p>
+                        <p className="text-xs text-blue-200">Engagement</p>
                       </div>
-                      <div className="text-center p-3 bg-slate-800 rounded-lg">
+                      <div className="text-center p-3 bg-blue-900/50 rounded-lg border border-blue-400/20">
                         <div className="flex items-center justify-center gap-1 text-lg font-bold text-yellow-400">
                           <TrendingUp className="w-5 h-5" />
                           {currentPlatform.influence}
                         </div>
-                        <p className="text-xs text-slate-400">Influence</p>
+                        <p className="text-xs text-blue-200">Influence</p>
                       </div>
                     </div>
 

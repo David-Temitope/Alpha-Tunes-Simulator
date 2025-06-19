@@ -45,7 +45,7 @@ export default function SideHustles() {
   return (
     <div className="space-y-4">
       {/* Resources Header */}
-      <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl">
+      <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
         <CardContent className="p-4">
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
@@ -53,54 +53,54 @@ export default function SideHustles() {
                 <Clock className="w-5 h-5" />
                 {gameState.timeSlots}
               </div>
-              <p className="text-xs opacity-80">Time Slots</p>
+              <p className="text-xs text-blue-200">Time Slots</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 text-lg font-bold text-yellow-400">
                 <Zap className="w-5 h-5" />
                 {gameState.energy}
               </div>
-              <p className="text-xs opacity-80">Energy</p>
+              <p className="text-xs text-blue-200">Energy</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 text-lg font-bold text-green-400">
                 <DollarSign className="w-5 h-5" />
                 {gameState.earnings.toLocaleString()}
               </div>
-              <p className="text-xs opacity-80">Balance</p>
+              <p className="text-xs text-blue-200">Balance</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Weekly Expenses */}
-      <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl">
+      <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-white">
             <Home className="w-5 h-5 text-red-400" />
             Weekly Expenses
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex justify-between items-center">
-            <span>Rent:</span>
+            <span className="text-blue-200">Rent:</span>
             <span className="font-bold text-red-400">${gameState.expenses.rent}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span>Food:</span>
+            <span className="text-blue-200">Food:</span>
             <span className="font-bold text-red-400">${gameState.expenses.food}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span>Transportation:</span>
+            <span className="text-blue-200">Transportation:</span>
             <span className="font-bold text-red-400">${gameState.expenses.transportation}</span>
           </div>
-          <hr className="border-white/20" />
+          <hr className="border-blue-400/20" />
           <div className="flex justify-between items-center font-bold">
-            <span>Total:</span>
+            <span className="text-white">Total:</span>
             <span className="text-red-400">${totalWeeklyExpenses}</span>
           </div>
           {gameState.earnings < totalWeeklyExpenses && (
-            <div className="flex items-center gap-2 p-2 bg-red-500/20 rounded-lg">
+            <div className="flex items-center gap-2 p-2 bg-red-500/20 rounded-lg border border-red-400/30">
               <AlertTriangle className="w-4 h-4 text-red-400" />
               <span className="text-sm text-red-400">Need more income to cover expenses!</span>
             </div>
@@ -130,7 +130,7 @@ export default function SideHustles() {
           return (
             <Card
               key={hustle.id}
-              className={`bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl transform hover:scale-105 transition-all duration-300 ${
+              className={`bg-blue-950/30 backdrop-blur-xl border-blue-400/20 text-white shadow-lg transform hover:scale-105 transition-all duration-300 ${
                 isActive ? "ring-2 ring-green-400" : ""
               } ${!canStart && !isActive ? "opacity-60" : ""}`}
             >

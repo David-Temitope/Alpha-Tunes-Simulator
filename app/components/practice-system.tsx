@@ -83,7 +83,9 @@ export default function PracticeSystem() {
 
   const handlePractice = (practiceType: (typeof practiceTypes)[0]) => {
     if (gameState.practicePoints >= practiceType.cost) {
+      // First spend the points
       spendPracticePoints(practiceType.cost)
+      // Then update the skill
       updateSkill(practiceType.id as keyof typeof gameState.skills, practiceType.skillGain)
     }
   }
@@ -91,17 +93,17 @@ export default function PracticeSystem() {
   return (
     <div className="space-y-4">
       {/* Practice Points Header */}
-      <Card className="bg-black/20 border-white/20 text-white">
+      <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Zap className="w-5 h-5 text-yellow-400" />
-              <span className="font-bold">Practice Points</span>
+              <span className="font-bold text-white">Practice Points</span>
             </div>
-            <span className="text-lg font-bold">{gameState.practicePoints}/100</span>
+            <span className="text-lg font-bold text-blue-400">{gameState.practicePoints}/100</span>
           </div>
           <Progress value={gameState.practicePoints} className="h-3" />
-          <p className="text-xs opacity-80 mt-2">Resets every week</p>
+          <p className="text-xs text-blue-200 mt-2">Resets every week</p>
         </CardContent>
       </Card>
 
@@ -193,10 +195,10 @@ export default function PracticeSystem() {
           const canPractice = gameState.practicePoints >= practice.cost
 
           return (
-            <Card key={practice.id} className="bg-black/20 border-white/20 text-white">
+            <Card key={practice.id} className="bg-blue-950/30 backdrop-blur-xl border-blue-400/20 text-white shadow-lg">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg flex items-center justify-center shadow-lg">
                     <Icon className="w-5 h-5 text-white" />
                   </div>
 

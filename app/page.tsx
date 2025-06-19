@@ -74,40 +74,40 @@ function GameContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-slate-900 to-black relative overflow-hidden">
       {/* Professional background elements */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-full blur-xl"></div>
-        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full blur-lg"></div>
-        <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full blur-2xl"></div>
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full blur-xl"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-r from-blue-300 to-blue-500 rounded-full blur-lg"></div>
+        <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-gradient-to-r from-blue-500 to-blue-700 rounded-full blur-2xl"></div>
       </div>
 
       <div className="container mx-auto p-4 max-w-md relative z-10">
         {/* Professional header */}
         <div className="text-center mb-6 text-white">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-blue-300 to-white bg-clip-text text-transparent">
             Alpha Tune
           </h1>
-          <p className="text-sm text-gray-300 font-medium">Music Industry Simulator</p>
+          <p className="text-sm text-blue-200 font-medium">Music Industry Simulator</p>
         </div>
 
         {/* Professional artist info bar */}
-        <Card className="mb-4 bg-white/10 backdrop-blur-xl border-white/20 text-white shadow-xl">
+        <Card className="mb-4 bg-blue-950/50 backdrop-blur-xl border-blue-400/30 text-white shadow-xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-700 rounded-full flex items-center justify-center shadow-lg">
                   <User className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="font-bold text-lg">{gameState.artist.stageName}</h2>
-                  <p className="text-sm text-gray-300">{gameState.artist.genre}</p>
+                  <h2 className="font-bold text-lg text-white">{gameState.artist.stageName}</h2>
+                  <p className="text-sm text-blue-200">{gameState.artist.genre}</p>
                 </div>
               </div>
               <div className="text-right">
                 <div className="flex items-center gap-1">
-                  <DollarSign className="w-4 h-4 text-emerald-400" />
-                  <span className="font-bold text-emerald-400">${gameState.earnings.toLocaleString()}</span>
+                  <DollarSign className="w-4 h-4 text-green-400" />
+                  <span className="font-bold text-green-400">${gameState.earnings.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Users className="w-4 h-4 text-blue-400" />
@@ -118,30 +118,30 @@ function GameContent() {
           </CardContent>
         </Card>
 
-        {/* Navigation Tabs with 3D effect */}
+        {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-white/10 backdrop-blur-xl border-white/20 shadow-xl mb-2">
+          <TabsList className="grid w-full grid-cols-5 bg-blue-950/50 backdrop-blur-xl border-blue-400/30 shadow-xl mb-2">
             <TabsTrigger
               value="dashboard"
-              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg data-[state=active]:text-blue-400"
+              className="text-blue-200 data-[state=active]:bg-blue-600/50 data-[state=active]:shadow-lg data-[state=active]:text-white"
             >
               <TrendingUp className="w-4 h-4" />
             </TabsTrigger>
             <TabsTrigger
               value="practice"
-              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg data-[state=active]:text-blue-400"
+              className="text-blue-200 data-[state=active]:bg-blue-600/50 data-[state=active]:shadow-lg data-[state=active]:text-white"
             >
               <Mic className="w-4 h-4" />
             </TabsTrigger>
             <TabsTrigger
               value="streaming"
-              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg data-[state=active]:text-blue-400"
+              className="text-blue-200 data-[state=active]:bg-blue-600/50 data-[state=active]:shadow-lg data-[state=active]:text-white"
             >
               <Headphones className="w-4 h-4" />
             </TabsTrigger>
             <TabsTrigger
               value="social"
-              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg data-[state=active]:text-blue-400 relative"
+              className="text-blue-200 data-[state=active]:bg-blue-600/50 data-[state=active]:shadow-lg data-[state=active]:text-white relative"
             >
               <Users className="w-4 h-4" />
               {unreadMessages > 0 && (
@@ -152,46 +152,46 @@ function GameContent() {
             </TabsTrigger>
             <TabsTrigger
               value="profile"
-              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg data-[state=active]:text-blue-400"
+              className="text-blue-200 data-[state=active]:bg-blue-600/50 data-[state=active]:shadow-lg data-[state=active]:text-white"
             >
               <User className="w-4 h-4" />
             </TabsTrigger>
           </TabsList>
 
-          <TabsList className="grid w-full grid-cols-6 bg-white/10 backdrop-blur-xl border-white/20 shadow-xl">
+          <TabsList className="grid w-full grid-cols-6 bg-blue-950/50 backdrop-blur-xl border-blue-400/30 shadow-xl">
             <TabsTrigger
               value="marketplace"
-              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg data-[state=active]:text-blue-400"
+              className="text-blue-200 data-[state=active]:bg-blue-600/50 data-[state=active]:shadow-lg data-[state=active]:text-white"
             >
               <ShoppingCart className="w-4 h-4" />
             </TabsTrigger>
             <TabsTrigger
               value="hustles"
-              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg data-[state=active]:text-blue-400"
+              className="text-blue-200 data-[state=active]:bg-blue-600/50 data-[state=active]:shadow-lg data-[state=active]:text-white"
             >
               <Briefcase className="w-4 h-4" />
             </TabsTrigger>
             <TabsTrigger
               value="trading"
-              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg data-[state=active]:text-blue-400"
+              className="text-blue-200 data-[state=active]:bg-blue-600/50 data-[state=active]:shadow-lg data-[state=active]:text-white"
             >
               <BarChart3 className="w-4 h-4" />
             </TabsTrigger>
             <TabsTrigger
               value="labels"
-              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg data-[state=active]:text-blue-400"
+              className="text-blue-200 data-[state=active]:bg-blue-600/50 data-[state=active]:shadow-lg data-[state=active]:text-white"
             >
               <Building2 className="w-4 h-4" />
             </TabsTrigger>
             <TabsTrigger
               value="finances"
-              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg data-[state=active]:text-blue-400"
+              className="text-blue-200 data-[state=active]:bg-blue-600/50 data-[state=active]:shadow-lg data-[state=active]:text-white"
             >
               <FileText className="w-4 h-4" />
             </TabsTrigger>
             <TabsTrigger
               value="help"
-              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg data-[state=active]:text-blue-400"
+              className="text-blue-200 data-[state=active]:bg-blue-600/50 data-[state=active]:shadow-lg data-[state=active]:text-white"
             >
               <HelpCircle className="w-4 h-4" />
             </TabsTrigger>
