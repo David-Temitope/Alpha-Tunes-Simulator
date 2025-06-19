@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -36,26 +36,36 @@ function GameContent() {
   const { gameState, showTitheModal } = useGame()
   const [activeTab, setActiveTab] = useState("dashboard")
 
-  // Background music
-  useEffect(() => {
-    const audio = new Audio("/audio/hope.mp3")
-    audio.loop = true
-    audio.volume = 0.3 // Not too loud
+  // ---------- Background music (with compatibility checks) ----------
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
+  useEffect(() => {
+    // Skip entirely if the browser can’t decode MP3
+    const testAudio = document.createElement("audio")
+    if (!testAudio.canPlayType?.("audio/mpeg")) return
+
+    // Lazily create the Audio element once we know MP3 is supported
+    audioRef.current = new Audio()
+    audioRef.current.src = "/audio/hope.mp3"
+    audioRef.current.preload = "auto"
+    audioRef.current.loop = true
+    audioRef.current.volume = 0.3
+
+    // Only play after the first user gesture
     const playAudio = () => {
-      audio.play().catch(console.error)
+      audioRef.current?.play().catch((err) => console.warn("Audio play failed:", err))
     }
 
-    // Play on user interaction
     document.addEventListener("click", playAudio, { once: true })
     document.addEventListener("keydown", playAudio, { once: true })
 
     return () => {
-      audio.pause()
+      audioRef.current?.pause()
       document.removeEventListener("click", playAudio)
       document.removeEventListener("keydown", playAudio)
     }
   }, [])
+  // ------------------------------------------------------------------
 
   if (!gameState.artist.stageName) {
     return <ArtistCreation />
