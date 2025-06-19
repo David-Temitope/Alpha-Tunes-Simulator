@@ -37,4 +37,12 @@ export default function StreamingPlatforms() {
       earningsPerStream: 0.02,
       unlocked: true,
       uploadCost: 0,
-      color: \"from-blue-500 to-purple-
+      color: "from-blue-500 to-purple-500",
+      difficulty: 1,
+      icon: "🎧",
+      description: "Free hip-hop focused platform",
+    },
+  ]
+
+  // Additional code can be added here if needed
+}
