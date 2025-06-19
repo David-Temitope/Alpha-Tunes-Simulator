@@ -14,6 +14,8 @@ import {
   Briefcase,
   BarChart3,
   FileText,
+  Building2,
+  HelpCircle,
 } from "lucide-react"
 import ArtistCreation from "./components/artist-creation"
 import Dashboard from "./components/dashboard"
@@ -27,6 +29,8 @@ import TradingCenter from "./components/trading-center"
 import FinancialStatements from "./components/financial-statements"
 import TitheModal from "./components/tithe-modal"
 import { GameProvider, useGame } from "./context/game-context"
+import RecordLabels from "./components/record-labels"
+import HelpGuide from "./components/help-guide"
 
 function GameContent() {
   const { gameState, showTitheModal } = useGame()
@@ -106,7 +110,7 @@ function GameContent() {
 
         {/* Navigation Tabs with 3D effect */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-black/30 backdrop-blur-lg border-white/30 shadow-xl mb-2">
+          <TabsList className="grid w-full grid-cols-5 bg-black/30 backdrop-blur-lg border-white/30 shadow-xl mb-2">
             <TabsTrigger
               value="dashboard"
               className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg"
@@ -131,9 +135,15 @@ function GameContent() {
             >
               <Users className="w-4 h-4" />
             </TabsTrigger>
+            <TabsTrigger
+              value="profile"
+              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg"
+            >
+              <User className="w-4 h-4" />
+            </TabsTrigger>
           </TabsList>
 
-          <TabsList className="grid w-full grid-cols-5 bg-black/30 backdrop-blur-lg border-white/30 shadow-xl">
+          <TabsList className="grid w-full grid-cols-6 bg-black/30 backdrop-blur-lg border-white/30 shadow-xl">
             <TabsTrigger
               value="marketplace"
               className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg"
@@ -153,16 +163,22 @@ function GameContent() {
               <BarChart3 className="w-4 h-4" />
             </TabsTrigger>
             <TabsTrigger
+              value="labels"
+              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg"
+            >
+              <Building2 className="w-4 h-4" />
+            </TabsTrigger>
+            <TabsTrigger
               value="finances"
               className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg"
             >
               <FileText className="w-4 h-4" />
             </TabsTrigger>
             <TabsTrigger
-              value="profile"
+              value="help"
               className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg"
             >
-              <User className="w-4 h-4" />
+              <HelpCircle className="w-4 h-4" />
             </TabsTrigger>
           </TabsList>
 
@@ -194,8 +210,16 @@ function GameContent() {
             <TradingCenter />
           </TabsContent>
 
+          <TabsContent value="labels">
+            <RecordLabels />
+          </TabsContent>
+
           <TabsContent value="finances">
             <FinancialStatements />
+          </TabsContent>
+
+          <TabsContent value="help">
+            <HelpGuide />
           </TabsContent>
 
           <TabsContent value="profile">

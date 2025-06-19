@@ -99,6 +99,19 @@ interface FinancialRecord {
   date: Date
 }
 
+interface ChatMessage {
+  id: string
+  type: "collaboration" | "feature" | "label_contract"
+  from: string
+  message: string
+  offer?: {
+    amount: number
+    details: string
+  }
+  timestamp: Date
+  responded: boolean
+}
+
 interface GameState {
   artist: Artist
   skills: Skills
@@ -123,6 +136,9 @@ interface GameState {
     food: number
     transportation: number
   }
+  recordLabel: string | null
+  chatMessages: ChatMessage[]
+  weeklyTaxes: number
 }
 
 interface GameContextType {
@@ -148,6 +164,9 @@ interface GameContextType {
   setShowTitheModal: (show: boolean) => void
   uploadSongToPlatform: (songId: string, platformId: string) => void
   addFinancialRecord: (type: "income" | "expense", category: string, amount: number, description: string) => void
+  signWithLabel: (labelName: string) => void
+  resetGame: () => void
+  respondToMessage: (messageId: string, accept: boolean) => void
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -486,6 +505,9 @@ const initialGameState: GameState = {
     food: 50,
     transportation: 100,
   },
+  recordLabel: null,
+  chatMessages: [],
+  weeklyTaxes: 0,
 }
 
 export function GameProvider({ children }: { children: ReactNode }) {
@@ -719,6 +741,37 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return true
   }
 
+  const signWithLabel = (labelName: string) => {
+    setGameState((prev) => ({
+      ...prev,
+      recordLabel: labelName,
+    }))
+  }
+
+  const resetGame = () => {
+    setGameState(initialGameState)
+    setShowTitheModal(false)
+  }
+
+  const respondToMessage = (messageId: string, accept: boolean) => {
+    const message = gameState.chatMessages.find((m) => m.id === messageId)
+    if (!message || message.responded) return
+
+    setGameState((prev) => ({
+      ...prev,
+      chatMessages: prev.chatMessages.map((m) => (m.id === messageId ? { ...m, responded: true } : m)),
+    }))
+
+    if (accept && message.offer) {
+      if (message.type === "collaboration" || message.type === "feature") {
+        addEarnings(message.offer.amount)
+        addFinancialRecord("income", "Collaborations", message.offer.amount, `${message.type} with ${message.from}`)
+      } else if (message.type === "label_contract") {
+        signWithLabel(message.from)
+      }
+    }
+  }
+
   const nextWeek = () => {
     // Process side hustles - only active ones continue
     const activeHustles = gameState.sideHustles.filter((h) => h.active)
@@ -775,33 +828,82 @@ export function GameProvider({ children }: { children: ReactNode }) {
     // Calculate expenses
     const totalExpenses = gameState.expenses.rent + gameState.expenses.food + gameState.expenses.transportation
 
+    // Calculate taxes
+    const possessionTax =
+      gameState.marketplaceItems.filter((item) => item.owned).reduce((total, item) => total + item.price, 0) * 0.09
+
+    const earningsTax = weeklyHustleEarnings * 0.07
+    const totalTaxes = possessionTax + earningsTax
+
+    // Generate ChatIt messages based on street knowledge
+    if (Math.random() < gameState.skills.streetKnowledge / 100) {
+      generateChatMessage()
+    }
+
     setGameState((prev) => ({
       ...prev,
       week: prev.week + 1,
       practicePoints: 100,
       marketingPoints: 5,
       energy: 10,
-      earnings: prev.earnings + weeklyHustleEarnings + streamingEarnings - totalExpenses,
+      earnings: prev.earnings + weeklyHustleEarnings + streamingEarnings - totalExpenses - totalTaxes,
       weeklyEarnings: weeklyHustleEarnings + streamingEarnings,
+      weeklyTaxes: totalTaxes,
       tradeItems: updatedTradeItems,
-      // Don't reset timeSlots - they depend on active side hustles
       timeSlots: 7 - activeHustles.reduce((total, hustle) => total + hustle.timeSlots, 0),
     }))
 
-    // Add financial records
-    if (weeklyHustleEarnings > 0) {
-      addFinancialRecord("income", "Side Hustles", weeklyHustleEarnings, "Weekly side hustle earnings")
-    }
-    if (streamingEarnings > 0) {
-      addFinancialRecord("income", "Streaming", streamingEarnings, "Weekly streaming revenue")
-    }
-    if (totalExpenses > 0) {
-      addFinancialRecord("expense", "Living Expenses", totalExpenses, "Weekly living expenses")
+    // Add tax record
+    if (totalTaxes > 0) {
+      addFinancialRecord("expense", "Taxes", totalTaxes, "Weekly taxes (possessions + earnings)")
     }
 
     if (weeklyHustleEarnings + streamingEarnings > 0) {
       setShowTitheModal(true)
     }
+  }
+
+  const generateChatMessage = () => {
+    const messageTypes = ["collaboration", "feature", "label_contract"]
+    const type = messageTypes[Math.floor(Math.random() * messageTypes.length)]
+
+    const collaborators = ["MC Flow", "DJ Beats", "Singer Sarah", "Producer Mike"]
+    const labels = ["Wise Record", "Sound Tunes", "Vibe On"]
+
+    let from, message, offer
+
+    switch (type) {
+      case "collaboration":
+        from = collaborators[Math.floor(Math.random() * collaborators.length)]
+        offer = { amount: Math.floor(Math.random() * 5000) + 1000, details: "50/50 split on new track" }
+        message = `Hey! I love your music style. Want to collaborate on a new track? I can offer $${offer.amount} upfront. Let me know!`
+        break
+      case "feature":
+        from = collaborators[Math.floor(Math.random() * collaborators.length)]
+        offer = { amount: Math.floor(Math.random() * 3000) + 500, details: "Feature on upcoming single" }
+        message = `Your voice would be perfect for my new single! I can pay $${offer.amount} for a feature. Interested?`
+        break
+      case "label_contract":
+        from = labels[Math.floor(Math.random() * labels.length)]
+        offer = { amount: 0, details: "Record label contract" }
+        message = `We've been following your career and we're impressed! ${from} would like to offer you a record deal. Are you ready to take your career to the next level?`
+        break
+    }
+
+    const newMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: type as "collaboration" | "feature" | "label_contract",
+      from,
+      message,
+      offer,
+      timestamp: new Date(),
+      responded: false,
+    }
+
+    setGameState((prev) => ({
+      ...prev,
+      chatMessages: [newMessage, ...prev.chatMessages.slice(0, 9)],
+    }))
   }
 
   const uploadSongToPlatform = (songId: string, platformId: string) => {
@@ -844,6 +946,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setShowTitheModal,
         uploadSongToPlatform,
         addFinancialRecord,
+        signWithLabel,
+        resetGame,
+        respondToMessage,
       }}
     >
       {children}

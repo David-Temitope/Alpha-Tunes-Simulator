@@ -8,15 +8,16 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Play, DollarSign, Upload, TrendingUp, Music } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Play, Upload, TrendingUp, Music, AlertCircle, Lock } from "lucide-react"
 import { useGame } from "../context/game-context"
 
 export default function StreamingPlatforms() {
   const { gameState, addEarnings, addFans, uploadSong, uploadSongToPlatform } = useGame()
-  const [uploadingTo, setUploadingTo] = useState<string | null>(null)
   const [showUploadDialog, setShowUploadDialog] = useState(false)
   const [showSongSelectDialog, setShowSongSelectDialog] = useState(false)
-  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null)
+  const [selectedSong, setSelectedSong] = useState<string | null>(null)
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
   const [songData, setSongData] = useState({
     title: "",
     genre: "",
@@ -32,9 +33,11 @@ export default function StreamingPlatforms() {
       realName: "SoundCloud",
       earningsPerStream: 0.1,
       unlocked: true,
+      uploadCost: 0,
       color: "from-orange-500 to-red-500",
       difficulty: 1,
       icon: "🎵",
+      description: "Free platform for emerging artists",
     },
     {
       id: "Amaplay",
@@ -42,9 +45,11 @@ export default function StreamingPlatforms() {
       realName: "Audiomack",
       earningsPerStream: 0.02,
       unlocked: true,
+      uploadCost: 0,
       color: "from-blue-500 to-purple-500",
       difficulty: 1,
       icon: "🎧",
+      description: "Free hip-hop focused platform",
     },
     {
       id: "TuneJam",
@@ -52,9 +57,11 @@ export default function StreamingPlatforms() {
       realName: "Boomplay",
       earningsPerStream: 0.5,
       unlocked: gameState.earnings >= 100,
+      uploadCost: 50,
       color: "from-green-500 to-teal-500",
       difficulty: 2,
       icon: "🎶",
+      description: "African music streaming giant",
     },
     {
       id: "StreamTunes",
@@ -62,9 +69,11 @@ export default function StreamingPlatforms() {
       realName: "YouTube Music",
       earningsPerStream: 2.0,
       unlocked: gameState.earnings >= 500,
+      uploadCost: 50,
       color: "from-red-500 to-pink-500",
       difficulty: 3,
       icon: "📺",
+      description: "Video-first music platform",
     },
     {
       id: "BeatFlow",
@@ -72,9 +81,11 @@ export default function StreamingPlatforms() {
       realName: "Tidal",
       earningsPerStream: 0.25,
       unlocked: gameState.earnings >= 250,
+      uploadCost: 200,
       color: "from-cyan-500 to-blue-500",
       difficulty: 2,
       icon: "🌊",
+      description: "High-fidelity audio platform",
     },
     {
       id: "Hypefy",
@@ -82,9 +93,11 @@ export default function StreamingPlatforms() {
       realName: "Spotify",
       earningsPerStream: 3.0,
       unlocked: gameState.earnings >= 1000,
+      uploadCost: 200,
       color: "from-green-400 to-emerald-500",
       difficulty: 4,
       icon: "🎤",
+      description: "World's largest streaming platform",
     },
     {
       id: "ChartTopper",
@@ -92,66 +105,89 @@ export default function StreamingPlatforms() {
       realName: "Amazon Music",
       earningsPerStream: 4.0,
       unlocked: gameState.earnings >= 2000,
+      uploadCost: 200,
       color: "from-yellow-500 to-orange-500",
       difficulty: 4,
       icon: "👑",
+      description: "Premium streaming service",
     },
     {
       id: "CoreBeats",
       name: "CoreBeats",
       realName: "Apple Music",
       earningsPerStream: 5.0,
-      unlocked: gameState.earnings >= 5000,
+      unlocked: gameState.recordLabel !== null,
+      uploadCost: 1000,
       color: "from-gray-600 to-gray-800",
       difficulty: 5,
       icon: "🍎",
+      description: "Premium platform (Label required)",
+    },
+    {
+      id: "DuhVoes",
+      name: "DuhVoes",
+      realName: "Exclusive Platform",
+      earningsPerStream: 8.0,
+      unlocked: gameState.recordLabel !== null,
+      uploadCost: 1000,
+      color: "from-purple-600 to-indigo-800",
+      difficulty: 5,
+      icon: "💎",
+      description: "Elite platform (Label required)",
     },
   ]
 
-  const handlePlatformSelect = (platform: (typeof platforms)[0]) => {
-    if (!platform.unlocked) return
-    setSelectedPlatform(platform.id)
+  const handleSongSelect = (songId: string) => {
+    setSelectedSong(songId)
     setShowSongSelectDialog(true)
   }
 
-  const handleSongUploadToPlatform = async (songId: string) => {
-    if (!selectedPlatform) return
+  const handlePlatformToggle = (platformId: string) => {
+    setSelectedPlatforms((prev) =>
+      prev.includes(platformId) ? prev.filter((id) => id !== platformId) : [...prev, platformId],
+    )
+  }
 
-    const platform = platforms.find((p) => p.id === selectedPlatform)
-    if (!platform) return
+  const handleUploadToSelectedPlatforms = async () => {
+    if (!selectedSong || selectedPlatforms.length === 0) return
 
-    setUploadingTo(selectedPlatform)
-    setShowSongSelectDialog(false)
-
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    const song = gameState.songs.find((s) => s.id === songId)
+    const song = gameState.songs.find((s) => s.id === selectedSong)
     if (!song) return
 
-    const skillAverage = Object.values(gameState.skills).reduce((a, b) => a + b, 0) / 6
-    const baseStreams = Math.floor((skillAverage * 10) / platform.difficulty)
-    const randomMultiplier = 0.5 + Math.random() * 1.5
-    const streams = Math.floor(baseStreams * randomMultiplier)
+    // Calculate total upload cost
+    const totalCost = selectedPlatforms.reduce((cost, platformId) => {
+      const platform = platforms.find((p) => p.id === platformId)
+      return cost + (platform?.uploadCost || 0)
+    }, 0)
 
-    const earnings = streams * platform.earningsPerStream
-    const newFans = Math.floor(streams * 0.1)
+    if (gameState.earnings < totalCost) {
+      alert("Not enough money for upload costs!")
+      return
+    }
 
-    uploadSongToPlatform(songId, selectedPlatform)
-    addEarnings(earnings)
-    addFans(newFans)
+    // Deduct upload costs
+    addEarnings(-totalCost)
 
-    setUploadingTo(null)
-    setSelectedPlatform(null)
+    // Upload to selected platforms
+    selectedPlatforms.forEach((platformId) => {
+      uploadSongToPlatform(selectedSong, platformId)
+    })
+
+    setShowSongSelectDialog(false)
+    setSelectedSong(null)
+    setSelectedPlatforms([])
   }
 
   const handleSongUpload = () => {
     if (songData.title && songData.genre) {
-      const skillAverage = Object.values(gameState.skills).reduce((a, b) => a + b, 0) / 4
+      const skillAverage = Object.values(gameState.skills).reduce((a, b) => a + b, 0) / 6
       const rating = Math.min(10, skillAverage / 10)
 
       uploadSong({
         ...songData,
         rating,
+        productionCost: 500,
+        qualityMultiplier: 1,
       })
 
       setSongData({
@@ -165,252 +201,282 @@ export default function StreamingPlatforms() {
     }
   }
 
+  // Filter songs that haven't been uploaded to all platforms
+  const availableSongs = gameState.songs.filter((song) => {
+    const unlockedPlatforms = platforms.filter((p) => p.unlocked)
+    return song.uploadedPlatforms.length < unlockedPlatforms.length
+  })
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-6 border border-slate-700">
+        <h2 className="text-2xl font-bold text-white mb-2">Music Distribution</h2>
+        <p className="text-slate-300">Upload your songs to streaming platforms and earn from streams</p>
+      </div>
+
       {/* Upload Song Button */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
         <DialogTrigger asChild>
-          <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg transform hover:scale-105 transition-all duration-300">
-            <Music className="w-4 h-4 mr-2" />
+          <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg shadow-lg">
+            <Music className="w-5 h-5 mr-2" />
             Create New Song
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-black/90 border-white/20 text-white">
+        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
           <DialogHeader>
-            <DialogTitle>Upload New Song</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Create New Song</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="title">Song Title</Label>
+              <Label htmlFor="title" className="text-slate-300">
+                Song Title
+              </Label>
               <Input
                 id="title"
                 value={songData.title}
                 onChange={(e) => setSongData({ ...songData, title: e.target.value })}
-                className="bg-white/10 border-white/20 text-white"
+                className="bg-slate-800 border-slate-600 text-white mt-1"
                 placeholder="Enter song title"
               />
             </div>
             <div>
-              <Label htmlFor="genre">Genre</Label>
+              <Label htmlFor="genre" className="text-slate-300">
+                Genre
+              </Label>
               <Select value={songData.genre} onValueChange={(value) => setSongData({ ...songData, genre: value })}>
-                <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                <SelectTrigger className="bg-slate-800 border-slate-600 text-white mt-1">
                   <SelectValue placeholder="Select genre" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-slate-800 border-slate-600">
                   <SelectItem value="Hip-Hop">Hip-Hop</SelectItem>
                   <SelectItem value="Gospel">Gospel</SelectItem>
                   <SelectItem value="Afrobeat">Afrobeat</SelectItem>
                   <SelectItem value="Pop">Pop</SelectItem>
                   <SelectItem value="R&B">R&B</SelectItem>
+                  <SelectItem value="Rock">Rock</SelectItem>
+                  <SelectItem value="Electronic">Electronic</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="duration">Duration (seconds)</Label>
-              <Input
-                id="duration"
-                type="number"
-                value={songData.duration}
-                onChange={(e) => setSongData({ ...songData, duration: Number.parseInt(e.target.value) })}
-                className="bg-white/10 border-white/20 text-white"
-                min="60"
-                max="600"
-              />
-            </div>
-            <Button onClick={handleSongUpload} className="w-full bg-gradient-to-r from-green-500 to-blue-500">
+            <Button
+              onClick={handleSongUpload}
+              className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+              disabled={!songData.title || !songData.genre}
+            >
               Create Song
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Song Selection Dialog */}
-      <Dialog open={showSongSelectDialog} onOpenChange={setShowSongSelectDialog}>
-        <DialogContent className="bg-black/90 border-white/20 text-white">
-          <DialogHeader>
-            <DialogTitle>Select Song to Upload</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 max-h-60 overflow-y-auto">
-            {gameState.songs
-              .filter((song) => selectedPlatform && !song.uploadedPlatforms.includes(selectedPlatform))
-              .map((song) => (
-                <div
-                  key={song.id}
-                  className="flex items-center gap-3 p-3 bg-white/10 rounded-lg cursor-pointer hover:bg-white/20 transition-colors"
-                  onClick={() => handleSongUploadToPlatform(song.id)}
-                >
+      {/* Songs Ready for Upload */}
+      <Card className="bg-slate-900 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Music className="w-5 h-5 text-blue-400" />
+            Songs Ready for Upload ({availableSongs.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {availableSongs.length > 0 ? (
+            availableSongs.map((song) => (
+              <div
+                key={song.id}
+                className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-700"
+              >
+                <div className="flex items-center gap-3">
                   <img
                     src={song.artwork || "/placeholder.svg"}
                     alt={song.title}
                     className="w-12 h-12 rounded-lg object-cover"
                   />
-                  <div className="flex-1">
-                    <h4 className="font-bold">{song.title}</h4>
-                    <p className="text-sm opacity-80">
+                  <div>
+                    <h4 className="font-semibold text-white">{song.title}</h4>
+                    <p className="text-sm text-slate-400">
                       {song.genre} • {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "0")}
                     </p>
+                    <p className="text-xs text-slate-500">Uploaded to: {song.uploadedPlatforms.length} platforms</p>
                   </div>
-                  <Badge className="bg-yellow-500/20 text-yellow-400">⭐ {song.rating.toFixed(1)}</Badge>
                 </div>
-              ))}
-            {gameState.songs.filter((song) => selectedPlatform && !song.uploadedPlatforms.includes(selectedPlatform))
-              .length === 0 && (
-              <p className="text-center text-white/60 py-4">
-                No songs available for this platform. Create new songs or upload to other platforms first.
-              </p>
-            )}
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-yellow-500/20 text-yellow-400">⭐ {song.rating.toFixed(1)}</Badge>
+                  <Button
+                    onClick={() => handleSongSelect(song.id)}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Upload className="w-4 h-4 mr-1" />
+                    Upload
+                  </Button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-slate-400">
+              <Music className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>No songs available for upload</p>
+              <p className="text-sm">Create new songs to get started</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Platform Selection Dialog */}
+      <Dialog open={showSongSelectDialog} onOpenChange={setShowSongSelectDialog}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Select Platforms to Upload</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {platforms.map((platform) => {
+              const isAlreadyUploaded =
+                selectedSong &&
+                gameState.songs.find((s) => s.id === selectedSong)?.uploadedPlatforms.includes(platform.id)
+              const canAfford = gameState.earnings >= platform.uploadCost
+              const isUnlocked = platform.unlocked
+
+              return (
+                <div
+                  key={platform.id}
+                  className={`flex items-center justify-between p-4 rounded-lg border ${
+                    isAlreadyUploaded
+                      ? "bg-green-900/20 border-green-700"
+                      : !isUnlocked
+                        ? "bg-slate-800/50 border-slate-700 opacity-50"
+                        : !canAfford
+                          ? "bg-red-900/20 border-red-700"
+                          : "bg-slate-800 border-slate-700"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 bg-gradient-to-r ${platform.color} rounded-lg flex items-center justify-center text-xl`}
+                    >
+                      {isUnlocked ? platform.icon : "🔒"}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">{platform.name}</h4>
+                      <p className="text-sm text-slate-400">{platform.description}</p>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="text-xs text-green-400">${platform.earningsPerStream.toFixed(2)}/stream</span>
+                        {platform.uploadCost > 0 && (
+                          <span className="text-xs text-yellow-400">Upload: ${platform.uploadCost}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {isAlreadyUploaded ? (
+                      <Badge className="bg-green-500/20 text-green-400">Already Uploaded</Badge>
+                    ) : !isUnlocked ? (
+                      <Badge className="bg-slate-500/20 text-slate-400">
+                        <Lock className="w-3 h-3 mr-1" />
+                        Locked
+                      </Badge>
+                    ) : !canAfford ? (
+                      <Badge className="bg-red-500/20 text-red-400">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        Can't Afford
+                      </Badge>
+                    ) : (
+                      <Checkbox
+                        checked={selectedPlatforms.includes(platform.id)}
+                        onCheckedChange={() => handlePlatformToggle(platform.id)}
+                        className="border-slate-600"
+                      />
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
+
+          {selectedPlatforms.length > 0 && (
+            <div className="border-t border-slate-700 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-slate-300">Total Upload Cost:</span>
+                <span className="font-bold text-yellow-400">
+                  $
+                  {selectedPlatforms
+                    .reduce((cost, platformId) => {
+                      const platform = platforms.find((p) => p.id === platformId)
+                      return cost + (platform?.uploadCost || 0)
+                    }, 0)
+                    .toLocaleString()}
+                </span>
+              </div>
+              <Button
+                onClick={handleUploadToSelectedPlatforms}
+                className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                disabled={selectedPlatforms.length === 0}
+              >
+                Upload to {selectedPlatforms.length} Platform{selectedPlatforms.length > 1 ? "s" : ""}
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
-      {/* Your Songs */}
-      {gameState.songs.length > 0 && (
-        <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Music className="w-5 h-5 text-purple-400" />
-              Your Songs ({gameState.songs.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {gameState.songs.slice(0, 3).map((song) => (
-              <div key={song.id} className="flex items-center gap-3 p-3 bg-white/10 rounded-lg">
-                <img
-                  src={song.artwork || "/placeholder.svg"}
-                  alt={song.title}
-                  className="w-12 h-12 rounded-lg object-cover"
-                />
-                <div className="flex-1">
-                  <h4 className="font-bold">{song.title}</h4>
-                  <p className="text-sm opacity-80">
-                    {song.genre} • {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "0")}
-                  </p>
-                </div>
-                <Badge className="bg-yellow-500/20 text-yellow-400">⭐ {song.rating.toFixed(1)}</Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Platforms Grid */}
-      <div className="space-y-3">
-        {platforms.map((platform) => (
-          <Card
-            key={platform.id}
-            className={`bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl transform hover:scale-105 transition-all duration-300 ${!platform.unlocked ? "opacity-50" : ""}`}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
+      {/* Platform Overview */}
+      <Card className="bg-slate-900 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-green-400" />
+            Platform Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3">
+            {platforms.map((platform) => (
+              <div
+                key={platform.id}
+                className={`flex items-center justify-between p-3 rounded-lg ${
+                  platform.unlocked ? "bg-slate-800" : "bg-slate-800/50"
+                } border border-slate-700`}
+              >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-12 h-12 bg-gradient-to-r ${platform.color} rounded-xl flex items-center justify-center shadow-lg text-2xl`}
+                    className={`w-8 h-8 bg-gradient-to-r ${platform.color} rounded-lg flex items-center justify-center text-sm`}
                   >
                     {platform.unlocked ? platform.icon : "🔒"}
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg">{platform.name}</h3>
-                    <p className="text-xs opacity-60">({platform.realName})</p>
+                    <h4 className="font-medium text-white">{platform.name}</h4>
+                    <p className="text-xs text-slate-400">{platform.description}</p>
                   </div>
                 </div>
-
                 <div className="text-right">
-                  <div className="flex items-center gap-1">
-                    <DollarSign className="w-4 h-4 text-green-400" />
-                    <span className="font-bold text-green-400">${platform.earningsPerStream.toFixed(2)}</span>
-                  </div>
-                  <p className="text-xs opacity-60">per stream</p>
+                  <div className="text-sm font-semibold text-green-400">${platform.earningsPerStream.toFixed(2)}</div>
+                  <div className="text-xs text-slate-400">per stream</div>
                 </div>
               </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Badge variant="secondary" className="bg-white/10 text-white">
-                    Difficulty: {platform.difficulty}/5
-                  </Badge>
-                  {!platform.unlocked && (
-                    <Badge variant="destructive" className="bg-red-500/20 text-red-400">
-                      Locked
-                    </Badge>
-                  )}
-                </div>
-
-                <Button
-                  onClick={() => handlePlatformSelect(platform)}
-                  disabled={!platform.unlocked || uploadingTo === platform.id || gameState.songs.length === 0}
-                  size="sm"
-                  className={`bg-gradient-to-r ${platform.color} hover:opacity-80 disabled:opacity-50 shadow-lg`}
-                >
-                  {uploadingTo === platform.id ? (
-                    "Uploading..."
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4 mr-1" />
-                      Upload
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {!platform.unlocked && (
-                <p className="text-xs opacity-60 mt-2">
-                  Unlock at $
-                  {platform.earningsPerStream === 0.5
-                    ? "100"
-                    : platform.earningsPerStream === 2.0
-                      ? "500"
-                      : platform.earningsPerStream === 0.25
-                        ? "250"
-                        : platform.earningsPerStream === 3.0
-                          ? "1,000"
-                          : platform.earningsPerStream === 4.0
-                            ? "2,000"
-                            : "5,000"}{" "}
-                  total earnings
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Stats */}
-      <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl">
+      {/* Streaming Stats */}
+      <Card className="bg-slate-900 border-slate-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-green-400" />
-            Streaming Stats
+          <CardTitle className="text-white flex items-center gap-2">
+            <Play className="w-5 h-5 text-purple-400" />
+            Your Streaming Stats
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent>
           <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-3 bg-white/10 rounded-lg">
-              <div className="flex items-center justify-center gap-1 text-lg font-bold text-blue-400">
-                <Music className="w-5 h-5" />
-                {gameState.songs.length}
-              </div>
-              <p className="text-xs opacity-80">Total Songs</p>
+            <div className="text-center p-4 bg-slate-800 rounded-lg">
+              <div className="text-2xl font-bold text-blue-400">{gameState.songs.length}</div>
+              <p className="text-sm text-slate-400">Total Songs</p>
             </div>
-            <div className="text-center p-3 bg-white/10 rounded-lg">
-              <div className="flex items-center justify-center gap-1 text-lg font-bold text-green-400">
-                <Play className="w-5 h-5" />
-                {Math.floor(gameState.fans * 0.3).toLocaleString()}
+            <div className="text-center p-4 bg-slate-800 rounded-lg">
+              <div className="text-2xl font-bold text-green-400">
+                {gameState.songs.reduce((total, song) => total + song.uploadedPlatforms.length, 0)}
               </div>
-              <p className="text-xs opacity-80">Weekly Streams</p>
+              <p className="text-sm text-slate-400">Platform Uploads</p>
             </div>
-          </div>
-          <div className="flex justify-between">
-            <span>Platforms Unlocked:</span>
-            <span className="font-bold">
-              {platforms.filter((p) => p.unlocked).length}/{platforms.length}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span>Best Platform:</span>
-            <span className="font-bold">
-              {platforms.filter((p) => p.unlocked).sort((a, b) => b.earningsPerStream - a.earningsPerStream)[0]?.name ||
-                "None"}
-            </span>
           </div>
         </CardContent>
       </Card>
