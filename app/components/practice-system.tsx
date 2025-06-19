@@ -56,13 +56,6 @@ export default function PracticeSystem() {
     },
   ]
 
-  const handlePractice = (practiceType: (typeof practiceTypes)[0]) => {
-    if (gameState.practicePoints >= practiceType.cost) {
-      spendPracticePoints(practiceType.cost)
-      updateSkill(practiceType.id as keyof typeof gameState.skills, practiceType.skillGain)
-    }
-  }
-
   const handleCreateSong = () => {
     if (songTitle && songGenre && gameState.earnings >= productionCost) {
       const qualityMultiplier = productionCost / 1000 // $1000 = 1x, $10000 = 10x
@@ -88,6 +81,13 @@ export default function PracticeSystem() {
     }
   }
 
+  const handlePractice = (practiceType: (typeof practiceTypes)[0]) => {
+    if (gameState.practicePoints >= practiceType.cost) {
+      spendPracticePoints(practiceType.cost)
+      updateSkill(practiceType.id as keyof typeof gameState.skills, practiceType.skillGain)
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Practice Points Header */}
@@ -108,7 +108,10 @@ export default function PracticeSystem() {
       {/* Create Song Button */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogTrigger asChild>
-          <Button className="w-full bg-gradient-to-r from-green-500 to-blue-500 shadow-lg">
+          <Button
+            className="w-full bg-gradient-to-r from-green-500 to-blue-500 shadow-lg"
+            onClick={() => setShowCreateDialog(true)}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Create New Song
           </Button>

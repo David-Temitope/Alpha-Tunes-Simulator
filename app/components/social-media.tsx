@@ -51,9 +51,10 @@ export default function SocialMedia() {
   const currentPlatform = gameState.socialPlatforms.find((p) => p.id === selectedPlatform)
 
   const handleCreatePost = () => {
-    if (postContent && currentPlatform && gameState.marketingPoints > 0) {
-      createSocialPost(selectedPlatform, postContent, postType)
+    if (postContent.trim() && currentPlatform && gameState.marketingPoints > 0) {
+      createSocialPost(selectedPlatform, postContent.trim(), postType)
       setPostContent("")
+      setPostType("status")
       setShowPostDialog(false)
     }
   }
@@ -183,6 +184,7 @@ export default function SocialMedia() {
                         <Button
                           className={`w-full bg-gradient-to-r ${platformColors[currentPlatform.id as keyof typeof platformColors]} shadow-lg`}
                           disabled={gameState.marketingPoints === 0}
+                          onClick={() => setShowPostDialog(true)}
                         >
                           <Plus className="w-4 h-4 mr-2" />
                           Create Post

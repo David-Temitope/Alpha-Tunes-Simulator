@@ -1,22 +1,77 @@
-"use client"
+# Alpha Tune Android App
+
+This is the Android version of Alpha Tune - Music Industry Simulator Game.
+
+## Setup Instructions
+
+1. **Prerequisites**
+   - Android Studio Arctic Fox or later
+   - Android SDK 21+ (Android 5.0+)
+   - Java 8 or later
+   - Kotlin 1.9.10+
+
+2. **Configuration**
+   - Replace `https://your-vercel-app.vercel.app` in `MainActivity.kt` with your actual Vercel URL
+   - Update the `android:host` in `AndroidManifest.xml` with your domain
+   - Generate a keystore for release signing
+
+3. **Building**
+   \`\`\`bash
+   # Debug build
+   ./gradlew assembleDebug
+   
+   # Release AAB (for Play Store)
+   ./gradlew bundleRelease
+   
+   # Release APK
+   ./gradlew assembleRelease
+   \`\`\`
+
+4. **Keystore Generation**
+   \`\`\`bash
+   keytool -genkey -v -keystore app/keystore/release.keystore -alias your_key_alias -keyalg RSA -keysize 2048 -validity 10000
+   \`\`\`
+
+5. **Play Store Submission**
+   - Use the generated AAB file from `app/build/outputs/bundle/release/`
+   - Upload to Google Play Console
+   - Complete store listing with screenshots and descriptions
+
+## Features
+
+- **Trusted Web Activity (TWA)** for native app experience
+- **Offline support** with local storage
+- **Push notifications** for game events
+- **Immersive fullscreen** gaming experience
+- **Professional UI** optimized for mobile
+- **Auto-save** game progress locally
+
+## App Store Assets Needed
+
+1. **App Icon** (512x512 PNG)
+2. **Feature Graphic** (1024x500 PNG)
+3. **Screenshots** (Phone: 1080x1920, Tablet: 1200x1920)
+4. **Privacy Policy** URL
+5. **App Description** and metadata
+
+## Technical Details
+
+- **Minimum SDK**: 21 (Android 5.0)
+- **Target SDK**: 34 (Android 14)
+- **Architecture**: WebView + TWA hybrid
+- **Size**: ~5MB (excluding web assets)
+- **Permissions**: Internet, Network State, Storage (for offline caching)
+\`\`\`
+
+Now let's add the achievement notification system to the main page:
+
+```typescriptreact file="app/page.tsx"
+[v0-no-op-code-block-prefix]"use client"
 
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Mic,
-  Users,
-  DollarSign,
-  Headphones,
-  TrendingUp,
-  ShoppingCart,
-  User,
-  Briefcase,
-  BarChart3,
-  FileText,
-  Building2,
-  HelpCircle,
-} from "lucide-react"
+import { Mic, Users, DollarSign, Headphones, TrendingUp, ShoppingCart, User, Briefcase, BarChart3, FileText, Building2, HelpCircle } from 'lucide-react'
 import ArtistCreation from "./components/artist-creation"
 import Dashboard from "./components/dashboard"
 import PracticeSystem from "./components/practice-system"
@@ -32,11 +87,23 @@ import { GameProvider, useGame } from "./context/game-context"
 import RecordLabels from "./components/record-labels"
 import HelpGuide from "./components/help-guide"
 import { Badge } from "@/components/ui/badge"
+import AchievementNotification from "./components/achievement-notification"
 
 function GameContent() {
   const { gameState, showTitheModal } = useGame()
   const [activeTab, setActiveTab] = useState("dashboard")
-  const [unreadMessages, setUnreadMessages] = useState(5) // Example state
+  const [newAchievements, setNewAchievements] = useState<string[]>([])
+  const [unreadMessages, setUnreadMessages] = useState(0)
+
+  // Check for unread messages
+  useEffect(() => {
+    const unread = gameState.chatMessages.filter(m => !m.responded).length
+    setUnreadMessages(unread)
+  }, [gameState.chatMessages])
+
+  const handleDismissAchievement = (achievementId: string) => {
+    setNewAchievements(prev => prev.filter(id => id !== achievementId))
+  }
 
   // ---------- Background music (with compatibility checks) ----------
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -107,7 +174,9 @@ function GameContent() {
               <div className="text-right">
                 <div className="flex items-center gap-1">
                   <DollarSign className="w-4 h-4 text-emerald-400" />
-                  <span className="font-bold text-emerald-400">${gameState.earnings.toLocaleString()}</span>
+                  <span className="font-bold text-emerald-400">
+                    ${gameState.earnings.toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Users className="w-4 h-4 text-blue-400" />
@@ -141,13 +210,13 @@ function GameContent() {
             </TabsTrigger>
             <TabsTrigger
               value="social"
-              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg data-[state=active]:text-blue-400 relative"
+              className="text-white data-[state=active]:bg-white/20 data-[state=active]:shadow-lg relative"
             >
               <Users className="w-4 h-4" />
               {unreadMessages > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 bg-red-500 text-white text-xs flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                   {unreadMessages}
-                </Badge>
+                </span>
               )}
             </TabsTrigger>
             <TabsTrigger
@@ -241,6 +310,12 @@ function GameContent() {
             <ArtistProfile />
           </TabsContent>
         </Tabs>
+
+        {/* Achievement Notifications */}
+        <AchievementNotification
+          achievements={newAchievements}
+          onDismiss={handleDismissAchievement}
+        />
 
         {/* Tithe Modal */}
         {showTitheModal && <TitheModal />}
