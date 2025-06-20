@@ -34,56 +34,66 @@ import HelpGuide from "./components/help-guide"
 import { Badge } from "@/components/ui/badge"
 
 function GameContent() {
-  const { gameState, showTitheModal, unreadMessages } = useGame()
+  const { gameState, showTitheModal, unreadMessages, getCareerStatus } = useGame()
   const [activeTab, setActiveTab] = useState("dashboard")
 
   // ---------- Background music (with compatibility checks) ----------
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [audioInitialized, setAudioInitialized] = useState(false)
 
   useEffect(() => {
-    // Skip entirely if the browser can't decode MP3
-    const testAudio = document.createElement("audio")
-    if (!testAudio.canPlayType?.("audio/mpeg")) return
+    const initializeAudio = () => {
+      if (audioInitialized) return
 
-    // Lazily create the Audio element once we know MP3 is supported
-    audioRef.current = new Audio()
-    audioRef.current.src = "/audio/hope.mp3"
-    audioRef.current.preload = "auto"
-    audioRef.current.loop = true
-    audioRef.current.volume = 0.3
+      try {
+        // Create audio element
+        const audio = new Audio("/audio/hope.mp3")
+        audio.loop = true
+        audio.volume = 0.3
+        audio.preload = "auto"
 
-    // Only play after the first user gesture
-    const playAudio = () => {
-      audioRef.current?.play().catch((err) => console.warn("Audio play failed:", err))
+        audioRef.current = audio
+        setAudioInitialized(true)
+
+        // Try to play immediately (will fail if no user interaction yet)
+        audio.play().catch(() => {
+          // Expected to fail on first load, will be handled by user interaction
+        })
+      } catch (error) {
+        console.warn("Audio initialization failed:", error)
+      }
     }
 
-    document.addEventListener("click", playAudio, { once: true })
-    document.addEventListener("keydown", playAudio, { once: true })
+    // Initialize audio
+    initializeAudio()
+
+    // Play audio on any user interaction
+    const playAudio = () => {
+      if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play().catch((err) => console.warn("Audio play failed:", err))
+      }
+    }
+
+    // Add multiple event listeners for user interaction
+    const events = ["click", "keydown", "touchstart", "mousedown"]
+    events.forEach((event) => {
+      document.addEventListener(event, playAudio, { once: true })
+    })
 
     return () => {
-      audioRef.current?.pause()
-      document.removeEventListener("click", playAudio)
-      document.removeEventListener("keydown", playAudio)
+      events.forEach((event) => {
+        document.removeEventListener(event, playAudio)
+      })
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
     }
-  }, [])
+  }, [audioInitialized])
   // ------------------------------------------------------------------
 
   if (!gameState.artist.stageName) {
     return <ArtistCreation />
-  }
-
-  // Calculate career status
-  const getCareerStatus = () => {
-    const totalStreams = gameState.songs.reduce((total, song) => {
-      return total + Object.values(song.streams).reduce((songTotal, streams) => songTotal + streams, 0)
-    }, 0)
-
-    if (gameState.fans >= 1000000 || totalStreams >= 10000000) return "Superstar"
-    if (gameState.fans >= 500000 || totalStreams >= 5000000) return "Celebrity"
-    if (gameState.fans >= 100000 || totalStreams >= 1000000) return "Rising Star"
-    if (gameState.fans >= 10000 || totalStreams >= 100000) return "Local Artist"
-    if (gameState.fans >= 1000 || totalStreams >= 10000) return "Emerging Artist"
-    return "Beginner"
   }
 
   return (

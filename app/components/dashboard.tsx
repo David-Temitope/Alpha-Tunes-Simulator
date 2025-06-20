@@ -70,7 +70,7 @@ export default function Dashboard() {
           </div>
           <Button
             onClick={nextWeek}
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 shadow-lg"
+            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg text-white font-bold"
           >
             Advance to Week {gameState.week + 1}
           </Button>
@@ -283,15 +283,17 @@ export default function Dashboard() {
             <div className="flex justify-between items-center">
               <span className="text-blue-200">Industry Status:</span>
               <span className="font-bold text-yellow-400">
-                {gameState.fans >= 100000
+                {gameState.fans >= 1000000
                   ? "Superstar"
-                  : gameState.fans >= 50000
+                  : gameState.fans >= 500000
                     ? "Celebrity"
-                    : gameState.fans >= 10000
+                    : gameState.fans >= 100000
                       ? "Rising Star"
-                      : gameState.fans >= 1000
+                      : gameState.fans >= 10000
                         ? "Local Artist"
-                        : "Beginner"}
+                        : gameState.fans >= 1000
+                          ? "Emerging Artist"
+                          : "Beginner"}
               </span>
             </div>
           </div>

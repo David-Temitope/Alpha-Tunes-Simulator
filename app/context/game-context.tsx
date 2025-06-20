@@ -168,6 +168,7 @@ interface GameContextType {
   resetGame: () => void
   respondToMessage: (messageId: string, accept: boolean) => void
   unreadMessages: number
+  getCareerStatus: () => string
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -511,12 +512,26 @@ const initialGameState: GameState = {
   weeklyTaxes: 0,
 }
 
+// Random song artwork selection
+const songArtworks = [
+  "/images/song-artwork/concert-crowd.webp",
+  "/images/song-artwork/studio-headphones.avif",
+  "/images/song-artwork/mixing-console.avif",
+  "/images/song-artwork/listening-music.avif",
+  "/images/song-artwork/recording-studio.avif",
+  "/images/song-artwork/home-studio.avif",
+  "/images/song-artwork/digital-waves.webp",
+  "/images/song-artwork/stage-silhouette.webp",
+  "/images/song-artwork/singing-studio.avif",
+  "/images/song-artwork/audio-equipment.avif",
+]
+
 // Save game state to localStorage
 const saveGameState = (state: GameState) => {
   try {
     localStorage.setItem("alphaTuneGameState", JSON.stringify(state))
   } catch (error) {
-    console.warn("Failed tosave game state:", error)
+    console.warn("Failed to save game state:", error)
   }
 }
 
@@ -585,6 +600,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const unread = gameState.chatMessages.filter((m) => !m.responded).length
     setUnreadMessages(unread)
   }, [gameState.chatMessages])
+
+  // Career status calculation
+  const getCareerStatus = () => {
+    const totalStreams = gameState.songs.reduce((total, song) => {
+      return total + Object.values(song.streams).reduce((songTotal, streams) => songTotal + streams, 0)
+    }, 0)
+
+    if (gameState.fans >= 1000000 || totalStreams >= 10000000) return "Superstar"
+    if (gameState.fans >= 500000 || totalStreams >= 5000000) return "Celebrity"
+    if (gameState.fans >= 100000 || totalStreams >= 1000000) return "Rising Star"
+    if (gameState.fans >= 10000 || totalStreams >= 100000) return "Local Artist"
+    if (gameState.fans >= 1000 || totalStreams >= 10000) return "Emerging Artist"
+    return "Beginner"
+  }
 
   const addFinancialRecord = (type: "income" | "expense", category: string, amount: number, description: string) => {
     const record: FinancialRecord = {
@@ -671,12 +700,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }
 
   const uploadSong = (songData: Omit<Song, "id" | "uploadDate" | "streams" | "uploadedPlatforms">) => {
+    // Select random artwork
+    const randomArtwork = songArtworks[Math.floor(Math.random() * songArtworks.length)]
+
     const newSong: Song = {
       ...songData,
       id: Date.now().toString(),
       uploadDate: new Date(),
       streams: {},
       uploadedPlatforms: [],
+      artwork: randomArtwork,
     }
 
     setGameState((prev) => ({
@@ -702,47 +735,98 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }
 
   const createSocialPost = (platformId: string, content: string, type: string) => {
+    const platform = gameState.socialPlatforms.find((p) => p.id === platformId)
+    if (!platform) return
+
+    // Calculate total streams for impact
+    const totalStreams = gameState.songs.reduce((total, song) => {
+      return total + Object.values(song.streams).reduce((songTotal, streams) => songTotal + streams, 0)
+    }, 0)
+
+    // Calculate total social followers
+    const totalSocialFollowers = gameState.socialPlatforms.reduce((total, p) => total + p.followers, 0)
+
+    // Calculate post engagement based on current followers
+    let baseLikes, baseShares
+    if (platform.followers === 0) {
+      baseLikes = Math.floor(Math.random() * 5) + 1 // 1-5 likes
+      baseShares = Math.floor(Math.random() * 2) + 1 // 1-2 shares
+    } else if (platform.followers <= 5) {
+      baseLikes = Math.floor(Math.random() * 11) + 10 // 10-20 likes
+      baseShares = Math.floor(Math.random() * 3) + 2 // 2-4 shares
+    } else if (platform.followers <= 50) {
+      baseLikes = Math.floor(Math.random() * 21) + 20 // 20-40 likes
+      baseShares = Math.floor(Math.random() * 5) + 3 // 3-7 shares
+    } else if (platform.followers <= 500) {
+      baseLikes = Math.floor(Math.random() * 51) + 50 // 50-100 likes
+      baseShares = Math.floor(Math.random() * 10) + 5 // 5-14 shares
+    } else {
+      baseLikes = Math.floor(Math.random() * 101) + 100 // 100-200 likes
+      baseShares = Math.floor(Math.random() * 21) + 10 // 10-30 shares
+    }
+
     const newPost: SocialPost = {
       id: Date.now().toString(),
       platform: platformId,
       content,
       type,
       timestamp: new Date(),
-      likes: Math.floor(Math.random() * 50) + 5, // 5-55 likes initially
-      shares: Math.floor(Math.random() * 10) + 1, // 1-11 shares initially
+      likes: baseLikes,
+      shares: baseShares,
     }
 
-    // More realistic social media growth based on current stats
-    const platform = gameState.socialPlatforms.find((p) => p.id === platformId)
-    if (platform) {
-      // Base growth is much smaller and depends on current followers
-      const followerMultiplier = Math.max(0.001, platform.followers / 10000) // Higher followers = slightly better growth
-      const baseGrowth = Math.floor(Math.random() * 3) + 1 // 1-3 base followers
-      const qualityBonus = type === "song_promo" ? 2 : type === "behind_scenes" ? 1.5 : 1
-      const engagementBonus = Math.floor(newPost.likes / 50) // Very small bonus from likes
-
-      const followerGrowth = Math.floor(baseGrowth * followerMultiplier * qualityBonus + engagementBonus)
-      const maxGrowth = Math.max(1, Math.min(followerGrowth, 8)) // Cap at 8 followers per post
-
-      // Engagement grows very slowly
-      const engagementIncrease = Math.random() * 0.1 // 0-0.1% increase
-      const influenceIncrease = Math.floor(maxGrowth / 5) // Influence grows even slower
-
-      setGameState((prev) => ({
-        ...prev,
-        socialPlatforms: prev.socialPlatforms.map((p) =>
-          p.id === platformId
-            ? {
-                ...p,
-                posts: [newPost, ...p.posts.slice(0, 9)],
-                followers: p.followers + maxGrowth,
-                engagement: Math.min(p.engagement + engagementIncrease, 100),
-                influence: p.influence + influenceIncrease,
-              }
-            : p,
-        ),
-      }))
+    // Enhanced follower growth algorithm
+    const impactFactors = {
+      streams: Math.min(totalStreams / 1000, 50), // Max 50 bonus from streams
+      morale: gameState.spiritualMorale / 10, // Max 10 bonus from morale
+      avgSkill: Object.values(gameState.skills).reduce((sum, skill) => sum + skill, 0) / 60, // Max 10 bonus from skills
+      fans: Math.min(gameState.fans / 100, 20), // Max 20 bonus from fans
+      influence: platform.influence / 10, // Max 10 bonus from influence
+      postQuality: type === "song_promo" ? 3 : type === "behind_scenes" ? 2 : 1,
     }
+
+    const totalImpact = Object.values(impactFactors).reduce((sum, factor) => sum + factor, 0)
+
+    // Base growth with impact multiplier
+    let followerGrowth
+    if (totalImpact < 5) {
+      followerGrowth = Math.floor(Math.random() * 3) + 1 // 1-3 followers
+    } else if (totalImpact < 15) {
+      followerGrowth = Math.floor(Math.random() * 8) + 3 // 3-10 followers
+    } else if (totalImpact < 30) {
+      followerGrowth = Math.floor(Math.random() * 15) + 8 // 8-22 followers
+    } else if (totalImpact < 50) {
+      followerGrowth = Math.floor(Math.random() * 25) + 15 // 15-39 followers
+    } else if (totalImpact < 80) {
+      followerGrowth = Math.floor(Math.random() * 51) + 50 // 50-100 followers
+    } else {
+      followerGrowth = Math.floor(Math.random() * 201) + 100 // 100-300 followers
+    }
+
+    // Viral chance for very high impact
+    if (totalImpact > 70 && Math.random() < 0.1) {
+      followerGrowth *= 10 // Viral post!
+      newPost.likes *= 5
+      newPost.shares *= 3
+    }
+
+    const engagementIncrease = Math.random() * 0.2 // 0-0.2% increase
+    const influenceIncrease = Math.floor(followerGrowth / 10) // Influence grows slower
+
+    setGameState((prev) => ({
+      ...prev,
+      socialPlatforms: prev.socialPlatforms.map((p) =>
+        p.id === platformId
+          ? {
+              ...p,
+              posts: [newPost, ...p.posts.slice(0, 9)],
+              followers: p.followers + followerGrowth,
+              engagement: Math.min(p.engagement + engagementIncrease, 100),
+              influence: p.influence + influenceIncrease,
+            }
+          : p,
+      ),
+    }))
 
     spendMarketingPoints(1)
   }
@@ -885,6 +969,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       3,
     )
 
+    let totalNewStreams = 0
     const updatedSongs = gameState.songs.map((song) => {
       const updatedSong = { ...song }
       song.uploadedPlatforms.forEach((platform) => {
@@ -898,6 +983,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }
 
         const newStreams = Math.max(0, baseStreams + (song.streams[platform] || 0) * 0.1)
+        totalNewStreams += newStreams
 
         const rate = platformRates[platform as keyof typeof platformRates] || 0.1
         const earnings = newStreams * rate
@@ -908,6 +994,24 @@ export function GameProvider({ children }: { children: ReactNode }) {
       })
       return updatedSong
     })
+
+    // Calculate total streams for fan growth
+    const totalStreams = updatedSongs.reduce((total, song) => {
+      return total + Object.values(song.streams).reduce((songTotal, streams) => songTotal + streams, 0)
+    }, 0)
+
+    // Fan growth based on streams and other factors
+    let fanGrowth = 0
+    if (totalStreams >= 700) {
+      const streamFactor = Math.min(totalStreams / 10000, 50) // Max 50 from streams
+      const influenceFactor = gameState.socialPlatforms.reduce((total, p) => total + p.influence, 0) / 10 // Max varies
+      const skillFactor = avgSkill / 10 // Max 10 from skills
+      const followerFactor = totalSocialFollowers / 100 // Max varies
+      const moraleFactor = gameState.spiritualMorale / 10 // Max 10 from morale
+
+      fanGrowth = Math.floor(streamFactor + influenceFactor + skillFactor + followerFactor + moraleFactor)
+      fanGrowth = Math.max(1, fanGrowth) // At least 1 fan if above 700 streams
+    }
 
     // Update trade item prices
     const updatedTradeItems = gameState.tradeItems.map((item) => {
@@ -945,6 +1049,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       earnings: prev.earnings + weeklyHustleEarnings + streamingEarnings - totalExpenses - totalTaxes,
       weeklyEarnings: weeklyHustleEarnings + streamingEarnings,
       weeklyTaxes: totalTaxes,
+      fans: prev.fans + fanGrowth,
       tradeItems: updatedTradeItems,
       songs: updatedSongs,
       timeSlots: 7 - activeHustles.reduce((total, hustle) => total + hustle.timeSlots, 0),
@@ -1056,6 +1161,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         resetGame,
         respondToMessage,
         unreadMessages,
+        getCareerStatus,
       }}
     >
       {children}

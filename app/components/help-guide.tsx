@@ -185,6 +185,21 @@ export default function HelpGuide() {
                       <li>• Higher tier labels offer better revenue shares</li>
                     </ul>
                   </div>
+
+                  <div className="p-4 bg-gradient-to-r from-pink-900/20 to-red-900/20 rounded-lg border border-pink-700/30">
+                    <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                      <Users className="w-4 h-4 text-pink-400" />
+                      How to Get More Fans
+                    </h4>
+                    <ul className="text-sm text-blue-200 space-y-1">
+                      <li>• Get 700+ total streams to start gaining fans automatically</li>
+                      <li>• Build social media followers across all platforms</li>
+                      <li>• Increase your influence through consistent posting</li>
+                      <li>• Improve your average skill level through practice</li>
+                      <li>• Maintain high spiritual morale through tithing</li>
+                      <li>• Fan growth accelerates with higher impact and activity</li>
+                    </ul>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -242,6 +257,14 @@ export default function HelpGuide() {
                       Free style songs ($0 budget) rely entirely on your social media following, skills, and spiritual
                       morale for streams. Paid production gives you a base multiplier that significantly boosts
                       streaming potential.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-blue-900/30 rounded-lg border border-blue-400/20">
+                    <h4 className="font-semibold text-white mb-2">Fan Growth Algorithm</h4>
+                    <p className="text-sm text-blue-200">
+                      Fans start growing when you reach 700+ total streams. Growth is based on: total streams ÷ 10,000 +
+                      social influence ÷ 10 + average skills ÷ 10 + social followers ÷ 100 + spiritual morale ÷ 10.
                     </p>
                   </div>
 
@@ -343,10 +366,10 @@ export default function HelpGuide() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-700/30">
+            <Card className="bg-gradient-to-r from-green-900/30 to-blue-900/30 border-green-700/30">
               <CardContent className="p-4">
                 <h3 className="font-bold text-white mb-2">💡 Pro Tips</h3>
-                <ul className="text-sm space-y-1 text-blue-200">
+                <ul className="text-sm space-y-1 text-green-200">
                   <li>• Save your progress by keeping the browser tab open</li>
                   <li>• Plan your weekly activities before clicking "Next Week"</li>
                   <li>• Balance short-term income with long-term career building</li>
