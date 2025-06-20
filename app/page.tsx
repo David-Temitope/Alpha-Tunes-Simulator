@@ -34,15 +34,14 @@ import HelpGuide from "./components/help-guide"
 import { Badge } from "@/components/ui/badge"
 
 function GameContent() {
-  const { gameState, showTitheModal } = useGame()
+  const { gameState, showTitheModal, unreadMessages } = useGame()
   const [activeTab, setActiveTab] = useState("dashboard")
-  const [unreadMessages, setUnreadMessages] = useState(5) // Example state
 
   // ---------- Background music (with compatibility checks) ----------
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
-    // Skip entirely if the browser can’t decode MP3
+    // Skip entirely if the browser can't decode MP3
     const testAudio = document.createElement("audio")
     if (!testAudio.canPlayType?.("audio/mpeg")) return
 
@@ -73,6 +72,20 @@ function GameContent() {
     return <ArtistCreation />
   }
 
+  // Calculate career status
+  const getCareerStatus = () => {
+    const totalStreams = gameState.songs.reduce((total, song) => {
+      return total + Object.values(song.streams).reduce((songTotal, streams) => songTotal + streams, 0)
+    }, 0)
+
+    if (gameState.fans >= 1000000 || totalStreams >= 10000000) return "Superstar"
+    if (gameState.fans >= 500000 || totalStreams >= 5000000) return "Celebrity"
+    if (gameState.fans >= 100000 || totalStreams >= 1000000) return "Rising Star"
+    if (gameState.fans >= 10000 || totalStreams >= 100000) return "Local Artist"
+    if (gameState.fans >= 1000 || totalStreams >= 10000) return "Emerging Artist"
+    return "Beginner"
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-950 via-slate-900 to-black relative overflow-hidden">
       {/* Professional background elements */}
@@ -101,7 +114,7 @@ function GameContent() {
                 </div>
                 <div>
                   <h2 className="font-bold text-lg text-white">{gameState.artist.stageName}</h2>
-                  <p className="text-sm text-blue-200">{gameState.artist.genre}</p>
+                  <p className="text-sm text-blue-200">{getCareerStatus()}</p>
                 </div>
               </div>
               <div className="text-right">

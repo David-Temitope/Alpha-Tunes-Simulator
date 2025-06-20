@@ -21,6 +21,24 @@ export default function PracticeSystem() {
   const [songDuration, setSongDuration] = useState(180)
   const [productionCost, setProductionCost] = useState(500)
 
+  const genres = [
+    "Hip-Hop",
+    "Gospel",
+    "Afrobeat",
+    "Pop",
+    "R&B",
+    "Rock",
+    "Electronic",
+    "Country",
+    "Jazz",
+    "Reggae",
+    "Classical",
+    "Folk",
+    "Trap",
+    "Drill",
+    "Amapiano",
+  ]
+
   const practiceTypes = [
     {
       id: "livePerformance",
@@ -58,7 +76,7 @@ export default function PracticeSystem() {
 
   const handleCreateSong = () => {
     if (songTitle && songGenre && gameState.earnings >= productionCost) {
-      const qualityMultiplier = productionCost / 1000 // $1000 = 1x, $10000 = 10x
+      const qualityMultiplier = productionCost === 0 ? 0.1 : productionCost / 1000 // Free style = 0.1x
 
       uploadSong({
         title: songTitle,
@@ -70,8 +88,10 @@ export default function PracticeSystem() {
         qualityMultiplier,
       })
 
-      // Deduct production cost
-      addEarnings(-productionCost)
+      // Deduct production cost only if not free
+      if (productionCost > 0) {
+        addEarnings(-productionCost)
+      }
 
       setSongTitle("")
       setSongGenre("")
@@ -83,9 +103,8 @@ export default function PracticeSystem() {
 
   const handlePractice = (practiceType: (typeof practiceTypes)[0]) => {
     if (gameState.practicePoints >= practiceType.cost) {
-      // First spend the points
+      // Spend points first, then update skill
       spendPracticePoints(practiceType.cost)
-      // Then update the skill
       updateSkill(practiceType.id as keyof typeof gameState.skills, practiceType.skillGain)
     }
   }
@@ -135,13 +154,18 @@ export default function PracticeSystem() {
             </div>
             <div>
               <Label htmlFor="genre">Genre</Label>
-              <Input
-                id="genre"
-                value={songGenre}
-                onChange={(e) => setSongGenre(e.target.value)}
-                className="bg-white/10 border-white/20 text-white"
-                placeholder="Hip-Hop, Pop, R&B, etc."
-              />
+              <Select value={songGenre} onValueChange={setSongGenre}>
+                <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                  <SelectValue placeholder="Select genre" />
+                </SelectTrigger>
+                <SelectContent>
+                  {genres.map((genre) => (
+                    <SelectItem key={genre} value={genre}>
+                      {genre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="duration">
@@ -167,6 +191,7 @@ export default function PracticeSystem() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="0">$0 - Free Style</SelectItem>
                   <SelectItem value="500">$500 - Basic Quality</SelectItem>
                   <SelectItem value="1500">$1,500 - Good Quality</SelectItem>
                   <SelectItem value="3000">$3,000 - High Quality</SelectItem>
@@ -174,14 +199,18 @@ export default function PracticeSystem() {
                   <SelectItem value="10000">$10,000 - Studio Quality</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs opacity-60 mt-1">Higher budget = better streaming performance</p>
+              <p className="text-xs opacity-60 mt-1">
+                {productionCost === 0
+                  ? "Free style relies on social media, skills, and morale for streams"
+                  : "Higher budget = better streaming performance"}
+              </p>
             </div>
             <Button
               onClick={handleCreateSong}
               className="w-full bg-gradient-to-r from-green-500 to-blue-500"
-              disabled={!songTitle || !songGenre || gameState.earnings < productionCost}
+              disabled={!songTitle || !songGenre || (productionCost > 0 && gameState.earnings < productionCost)}
             >
-              Create Song (${productionCost.toLocaleString()})
+              Create Song {productionCost > 0 ? `($${productionCost.toLocaleString()})` : "(Free)"}
             </Button>
           </div>
         </DialogContent>
@@ -246,10 +275,11 @@ export default function PracticeSystem() {
         <CardContent className="p-4">
           <h3 className="font-bold mb-2">💡 Practice Tips</h3>
           <ul className="text-sm space-y-1 opacity-80">
-            <li>• Higher skills improve song ratings</li>
-            <li>• Balanced skills unlock collaborations</li>
-            <li>• Genre-specific skills boost streaming</li>
-            <li>• Practice consistently for best results</li>
+            <li>• Higher skills improve song ratings and streaming performance</li>
+            <li>• Balanced skills unlock collaborations with other artists</li>
+            <li>• Genre-specific skills boost streaming on different platforms</li>
+            <li>• Practice consistently for best results and career growth</li>
+            <li>• Free style songs rely on your social media and skills for success</li>
           </ul>
         </CardContent>
       </Card>

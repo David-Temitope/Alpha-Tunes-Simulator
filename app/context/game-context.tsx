@@ -167,6 +167,7 @@ interface GameContextType {
   signWithLabel: (labelName: string) => void
   resetGame: () => void
   respondToMessage: (messageId: string, accept: boolean) => void
+  unreadMessages: number
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -501,7 +502,7 @@ const initialGameState: GameState = {
   week: 1,
   unlockedPlatforms: ["SoundVibe", "Amaplay"],
   expenses: {
-    rent: 800,
+    rent: 600, // Reduced from 800
     food: 50,
     transportation: 100,
   },
@@ -515,7 +516,7 @@ const saveGameState = (state: GameState) => {
   try {
     localStorage.setItem("alphaTuneGameState", JSON.stringify(state))
   } catch (error) {
-    console.warn("Failed to save game state:", error)
+    console.warn("Failed tosave game state:", error)
   }
 }
 
@@ -538,6 +539,21 @@ const loadGameState = (): GameState | null => {
           date: new Date(record.date),
         }))
       }
+      if (parsed.socialPlatforms) {
+        parsed.socialPlatforms = parsed.socialPlatforms.map((platform: any) => ({
+          ...platform,
+          posts: platform.posts.map((post: any) => ({
+            ...post,
+            timestamp: new Date(post.timestamp),
+          })),
+        }))
+      }
+      if (parsed.chatMessages) {
+        parsed.chatMessages = parsed.chatMessages.map((message: any) => ({
+          ...message,
+          timestamp: new Date(message.timestamp),
+        }))
+      }
       return parsed
     }
   } catch (error) {
@@ -545,129 +561,6 @@ const loadGameState = (): GameState | null => {
   }
   return null
 }
-
-// Extended achievements list
-const getAllAchievements = (gameState: GameState) => [
-  {
-    id: "first-song",
-    name: "First Song",
-    description: "Upload your first song",
-    unlocked: gameState.songs.length > 0,
-    reward: { type: "fans", amount: 100 },
-  },
-  {
-    id: "fan-milestone-1k",
-    name: "Rising Star",
-    description: "Reach 1,000 fans",
-    unlocked: gameState.fans >= 1000,
-    reward: { type: "morale", amount: 10 },
-  },
-  {
-    id: "fan-milestone-10k",
-    name: "Local Celebrity",
-    description: "Reach 10,000 fans",
-    unlocked: gameState.fans >= 10000,
-    reward: { type: "earnings", amount: 5000 },
-  },
-  {
-    id: "earnings-milestone-10k",
-    name: "Money Maker",
-    description: "Earn $10,000",
-    unlocked: gameState.earnings >= 10000,
-    reward: { type: "skill", skill: "business", amount: 5 },
-  },
-  {
-    id: "earnings-milestone-100k",
-    name: "Six Figure Artist",
-    description: "Earn $100,000",
-    unlocked: gameState.earnings >= 100000,
-    reward: { type: "fans", amount: 5000 },
-  },
-  {
-    id: "skill-master",
-    name: "Skill Master",
-    description: "Reach 50 in any skill",
-    unlocked: Math.max(...Object.values(gameState.skills)) >= 50,
-    reward: { type: "practicePoints", amount: 50 },
-  },
-  {
-    id: "all-skills-25",
-    name: "Well Rounded",
-    description: "Reach 25 in all skills",
-    unlocked: Math.min(...Object.values(gameState.skills)) >= 25,
-    reward: { type: "morale", amount: 15 },
-  },
-  {
-    id: "social-influencer",
-    name: "Social Influencer",
-    description: "Unlock 5 social platforms",
-    unlocked: gameState.socialPlatforms.filter((p) => p.unlocked).length >= 5,
-    reward: { type: "marketingPoints", amount: 10 },
-  },
-  {
-    id: "viral-post",
-    name: "Viral Sensation",
-    description: "Get 1000+ likes on a social post",
-    unlocked: gameState.socialPlatforms.some((p) => p.posts.some((post) => post.likes >= 1000)),
-    reward: { type: "fans", amount: 2000 },
-  },
-  {
-    id: "collector",
-    name: "Collector",
-    description: "Own 5 marketplace items",
-    unlocked: gameState.marketplaceItems.filter((i) => i.owned).length >= 5,
-    reward: { type: "earnings", amount: 2000 },
-  },
-  {
-    id: "property-owner",
-    name: "Property Owner",
-    description: "Buy your first property",
-    unlocked: gameState.marketplaceItems.some((i) => i.category === "property" && i.owned),
-    reward: { type: "morale", amount: 20 },
-  },
-  {
-    id: "car-owner",
-    name: "Riding in Style",
-    description: "Buy your first vehicle",
-    unlocked: gameState.marketplaceItems.some((i) => i.category === "vehicle" && i.owned),
-    reward: { type: "fans", amount: 500 },
-  },
-  {
-    id: "record-deal",
-    name: "Signed Artist",
-    description: "Sign with a record label",
-    unlocked: gameState.recordLabel !== null,
-    reward: { type: "earnings", amount: 10000 },
-  },
-  {
-    id: "week-survivor",
-    name: "Month Survivor",
-    description: "Survive 4 weeks in the industry",
-    unlocked: gameState.week >= 4,
-    reward: { type: "energy", amount: 5 },
-  },
-  {
-    id: "veteran",
-    name: "Industry Veteran",
-    description: "Survive 12 weeks in the industry",
-    unlocked: gameState.week >= 12,
-    reward: { type: "skill", skill: "streetKnowledge", amount: 10 },
-  },
-  {
-    id: "streaming-king",
-    name: "Streaming Royalty",
-    description: "Upload to all premium platforms",
-    unlocked: gameState.songs.some((s) => s.uploadedPlatforms.includes("CoreBeats")),
-    reward: { type: "earnings", amount: 15000 },
-  },
-  {
-    id: "collaboration-master",
-    name: "Collaboration Master",
-    description: "Accept 5 collaboration offers",
-    unlocked: gameState.chatMessages.filter((m) => m.type === "collaboration" && m.responded).length >= 5,
-    reward: { type: "skill", skill: "streetKnowledge", amount: 15 },
-  },
-]
 
 export function GameProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -686,57 +579,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const [showTitheModal, setShowTitheModal] = useState(false)
   const [unreadMessages, setUnreadMessages] = useState(0)
-  const [newAchievements, setNewAchievements] = useState<string[]>([])
 
-  // Check for new achievements
-  const checkAchievements = (newState: GameState) => {
-    const achievements = getAllAchievements(newState)
-    const previousAchievements = getAllAchievements(gameState)
-
-    achievements.forEach((achievement) => {
-      const wasUnlocked = previousAchievements.find((a) => a.id === achievement.id)?.unlocked
-      if (achievement.unlocked && !wasUnlocked) {
-        setNewAchievements((prev) => [...prev, achievement.id])
-        // Apply achievement reward
-        if (achievement.reward) {
-          switch (achievement.reward.type) {
-            case "fans":
-              addFans(achievement.reward.amount)
-              break
-            case "earnings":
-              addEarnings(achievement.reward.amount)
-              break
-            case "morale":
-              updateMorale(achievement.reward.amount)
-              break
-            case "practicePoints":
-              spendPracticePoints(-achievement.reward.amount)
-              break
-            case "energy":
-              setGameState((prev) => ({
-                ...prev,
-                energy: Math.min(prev.energy + achievement.reward.amount, 10),
-              }))
-              break
-            case "skill":
-              updateSkill(achievement.reward.skill, achievement.reward.amount)
-              break
-            case "marketingPoints":
-              spendMarketingPoints(-achievement.reward.amount)
-              break
-            // Add other reward types as needed
-          }
-        }
-      }
-    })
-  }
-
-  // Update setGameState to check achievements
-  const setGameStateWithChecks = (newState: GameState | ((prev: GameState) => GameState)) => {
-    const updatedState = typeof newState === "function" ? newState(gameState) : newState
-    checkAchievements(updatedState)
-    setGameState(updatedState)
-  }
+  // Check for unread messages
+  useEffect(() => {
+    const unread = gameState.chatMessages.filter((m) => !m.responded).length
+    setUnreadMessages(unread)
+  }, [gameState.chatMessages])
 
   const addFinancialRecord = (type: "income" | "expense", category: string, amount: number, description: string) => {
     const record: FinancialRecord = {
@@ -749,14 +597,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
       date: new Date(),
     }
 
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       financialRecords: [record, ...prev.financialRecords],
     }))
   }
 
   const updateSkill = (skill: keyof Skills, amount: number) => {
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       skills: {
         ...prev.skills,
@@ -766,35 +614,35 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }
 
   const spendPracticePoints = (amount: number) => {
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       practicePoints: Math.max(prev.practicePoints - amount, 0),
     }))
   }
 
   const spendMarketingPoints = (amount: number) => {
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       marketingPoints: Math.max(prev.marketingPoints - amount, 0),
     }))
   }
 
   const spendTimeSlots = (amount: number) => {
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       timeSlots: Math.max(prev.timeSlots - amount, 0),
     }))
   }
 
   const spendEnergy = (amount: number) => {
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       energy: Math.max(prev.energy - amount, 0),
     }))
   }
 
   const addEarnings = (amount: number) => {
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       earnings: prev.earnings + amount,
       weeklyEarnings: prev.weeklyEarnings + amount,
@@ -809,14 +657,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }
 
   const addFans = (amount: number) => {
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       fans: prev.fans + amount,
     }))
   }
 
   const updateMorale = (amount: number) => {
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       spiritualMorale: Math.max(0, Math.min(100, prev.spiritualMorale + amount)),
     }))
@@ -831,7 +679,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       uploadedPlatforms: [],
     }
 
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       songs: [...prev.songs, newSong],
     }))
@@ -843,7 +691,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       return false
     }
 
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       earnings: prev.earnings - item.price,
       marketplaceItems: prev.marketplaceItems.map((i) => (i.id === itemId ? { ...i, owned: true } : i)),
@@ -880,7 +728,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const engagementIncrease = Math.random() * 0.1 // 0-0.1% increase
       const influenceIncrease = Math.floor(maxGrowth / 5) // Influence grows even slower
 
-      setGameStateWithChecks((prev) => ({
+      setGameState((prev) => ({
         ...prev,
         socialPlatforms: prev.socialPlatforms.map((p) =>
           p.id === platformId
@@ -905,7 +753,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       return false
     }
 
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       sideHustles: prev.sideHustles.map((h) => (h.id === hustleId ? { ...h, active: true } : h)),
       timeSlots: prev.timeSlots - hustle.timeSlots,
@@ -921,7 +769,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       return false
     }
 
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       sideHustles: prev.sideHustles.map((h) => (h.id === hustleId ? { ...h, active: false } : h)),
       timeSlots: prev.timeSlots + hustle.timeSlots,
@@ -937,7 +785,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const totalCost = item.currentPrice * quantity
     if (gameState.earnings < totalCost) return false
 
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       earnings: prev.earnings - totalCost,
       tradeItems: prev.tradeItems.map((i) =>
@@ -961,7 +809,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const totalEarnings = item.currentPrice * quantity
 
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       earnings: prev.earnings + totalEarnings,
       tradeItems: prev.tradeItems.map((i) => (i.id === itemId ? { ...i, owned: i.owned - quantity } : i)),
@@ -972,14 +820,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }
 
   const signWithLabel = (labelName: string) => {
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       recordLabel: labelName,
     }))
   }
 
   const resetGame = () => {
-    setGameStateWithChecks(initialGameState)
+    setGameState(initialGameState)
     setShowTitheModal(false)
   }
 
@@ -987,7 +835,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const message = gameState.chatMessages.find((m) => m.id === messageId)
     if (!message || message.responded) return
 
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       chatMessages: prev.chatMessages.map((m) => (m.id === messageId ? { ...m, responded: true } : m)),
     }))
@@ -1016,7 +864,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
     })
 
-    // Calculate streaming revenue
+    // Calculate streaming revenue based on player activity
     let streamingEarnings = 0
     const platformRates = {
       SoundVibe: 0.1,
@@ -1029,11 +877,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
       CoreBeats: 5.0,
     }
 
+    // Calculate player activity score
+    const totalSocialFollowers = gameState.socialPlatforms.reduce((total, platform) => total + platform.followers, 0)
+    const avgSkill = Object.values(gameState.skills).reduce((sum, skill) => sum + skill, 0) / 6
+    const activityScore = Math.min(
+      1 + (totalSocialFollowers / 10000) * 0.5 + (avgSkill / 100) * 0.3 + (gameState.spiritualMorale / 100) * 0.2,
+      3,
+    )
+
     const updatedSongs = gameState.songs.map((song) => {
       const updatedSong = { ...song }
       song.uploadedPlatforms.forEach((platform) => {
-        // Generate streams based on song quality and random factors
-        const baseStreams = Math.floor(Math.random() * 100 * song.qualityMultiplier)
+        // Base streams depend on production cost and activity
+        let baseStreams = 0
+        if (song.productionCost > 0) {
+          baseStreams = Math.floor(Math.random() * 100 * song.qualityMultiplier * activityScore)
+        } else {
+          // Free style songs only get streams from social media and skills
+          baseStreams = Math.floor(Math.random() * 20 * activityScore)
+        }
+
         const newStreams = Math.max(0, baseStreams + (song.streams[platform] || 0) * 0.1)
 
         const rate = platformRates[platform as keyof typeof platformRates] || 0.1
@@ -1073,7 +936,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
 
     // Apply all updates at once
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       week: prev.week + 1,
       practicePoints: 100, // Reset to 100 every week
@@ -1143,14 +1006,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
       responded: false,
     }
 
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       chatMessages: [newMessage, ...prev.chatMessages.slice(0, 9)],
     }))
   }
 
   const uploadSongToPlatform = (songId: string, platformId: string) => {
-    setGameStateWithChecks((prev) => ({
+    setGameState((prev) => ({
       ...prev,
       songs: prev.songs.map((song) =>
         song.id === songId
@@ -1164,17 +1027,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  // Check for unread messages
-  useEffect(() => {
-    const unread = gameState.chatMessages.filter((m) => !m.responded).length
-    setUnreadMessages(unread)
-  }, [gameState.chatMessages])
-
   return (
     <GameContext.Provider
       value={{
         gameState,
-        setGameState: setGameStateWithChecks,
+        setGameState,
         updateSkill,
         spendPracticePoints,
         spendMarketingPoints,
@@ -1198,6 +1055,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         signWithLabel,
         resetGame,
         respondToMessage,
+        unreadMessages,
       }}
     >
       {children}

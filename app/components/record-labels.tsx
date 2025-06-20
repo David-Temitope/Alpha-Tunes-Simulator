@@ -40,7 +40,7 @@ export default function RecordLabels() {
         netProfit: 15000,
         influence: 20,
         songs: 10,
-        avgSkill: 3.5,
+        avgSkill: 5,
       },
       benefits: [
         "15% revenue share",
@@ -59,7 +59,7 @@ export default function RecordLabels() {
         netProfit: 35000,
         influence: 50,
         songs: 15,
-        avgSkill: 4.0,
+        avgSkill: 15,
       },
       benefits: [
         "20% revenue share",
@@ -79,7 +79,7 @@ export default function RecordLabels() {
         netProfit: 75000,
         influence: 100,
         songs: 20,
-        avgSkill: 4.5,
+        avgSkill: 30,
       },
       benefits: [
         "25% revenue share",
@@ -99,7 +99,7 @@ export default function RecordLabels() {
         netProfit: 150000,
         influence: 200,
         songs: 25,
-        avgSkill: 5.0,
+        avgSkill: 50,
       },
       benefits: [
         "30% revenue share",
@@ -119,7 +119,7 @@ export default function RecordLabels() {
         netProfit: 300000,
         influence: 400,
         songs: 30,
-        avgSkill: 5.5,
+        avgSkill: 70,
       },
       benefits: [
         "35% revenue share",
@@ -139,7 +139,7 @@ export default function RecordLabels() {
         netProfit: 500000,
         influence: 800,
         songs: 40,
-        avgSkill: 6.0,
+        avgSkill: 90,
       },
       benefits: [
         "40% revenue share",
@@ -170,13 +170,13 @@ export default function RecordLabels() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-6 border border-slate-700">
+      <div className="bg-gradient-to-r from-blue-950 to-blue-900 rounded-xl p-6 border border-blue-400/30 shadow-xl">
         <h2 className="text-2xl font-bold text-white mb-2">Record Labels</h2>
-        <p className="text-slate-300">Build your career and attract major label attention</p>
+        <p className="text-blue-200">Build your career and attract major label attention</p>
       </div>
 
       {/* Current Status */}
-      <Card className="bg-slate-900 border-slate-700">
+      <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 shadow-xl">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-blue-400" />
@@ -187,21 +187,21 @@ export default function RecordLabels() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-slate-300">Net Profit:</span>
+                <span className="text-blue-200">Net Profit:</span>
                 <span className="font-bold text-green-400">${netProfit.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-300">Total Influence:</span>
+                <span className="text-blue-200">Total Influence:</span>
                 <span className="font-bold text-purple-400">{totalInfluence}</span>
               </div>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-slate-300">Songs Released:</span>
+                <span className="text-blue-200">Songs Released:</span>
                 <span className="font-bold text-blue-400">{gameState.songs.length}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-300">Avg Skill Level:</span>
+                <span className="text-blue-200">Avg Skill Level:</span>
                 <span className="font-bold text-yellow-400">{avgSkill.toFixed(1)}</span>
               </div>
             </div>
@@ -227,7 +227,7 @@ export default function RecordLabels() {
           return (
             <Card
               key={label.id}
-              className={`bg-slate-900 border-slate-700 ${
+              className={`bg-blue-950/50 backdrop-blur-xl border-blue-400/30 shadow-xl ${
                 eligible ? "ring-2 ring-green-500/50" : ""
               } ${isSigned ? "ring-2 ring-blue-500" : ""}`}
             >
@@ -241,12 +241,12 @@ export default function RecordLabels() {
                     </div>
                     <div>
                       <CardTitle className="text-white text-lg">{label.name}</CardTitle>
-                      <p className="text-slate-400 text-sm">{label.description}</p>
+                      <p className="text-blue-200 text-sm">{label.description}</p>
                       <div className="flex items-center gap-1 mt-1">
                         {Array.from({ length: label.tier }).map((_, i) => (
                           <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                         ))}
-                        <span className="text-xs text-slate-500 ml-1">Tier {label.tier}</span>
+                        <span className="text-xs text-blue-300 ml-1">Tier {label.tier}</span>
                       </div>
                     </div>
                   </div>
@@ -268,7 +268,7 @@ export default function RecordLabels() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-slate-300">Net Profit:</span>
+                        <span className="text-sm text-blue-200">Net Profit:</span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-white">
                             ${label.requirements.netProfit.toLocaleString()}
@@ -281,7 +281,7 @@ export default function RecordLabels() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-slate-300">Influence:</span>
+                        <span className="text-sm text-blue-200">Influence:</span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-white">{label.requirements.influence}</span>
                           {requirements.influence ? (
@@ -294,7 +294,7 @@ export default function RecordLabels() {
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-slate-300">Songs:</span>
+                        <span className="text-sm text-blue-200">Songs:</span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-white">{label.requirements.songs}</span>
                           {requirements.songs ? (
@@ -305,7 +305,7 @@ export default function RecordLabels() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-slate-300">Avg Skill:</span>
+                        <span className="text-sm text-blue-200">Avg Skill:</span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-white">{label.requirements.avgSkill}</span>
                           {requirements.avgSkill ? (
@@ -326,7 +326,7 @@ export default function RecordLabels() {
                     {label.benefits.map((benefit, index) => (
                       <div key={index} className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
-                        <span className="text-sm text-slate-300">{benefit}</span>
+                        <span className="text-sm text-blue-200">{benefit}</span>
                       </div>
                     ))}
                   </div>
@@ -349,10 +349,10 @@ export default function RecordLabels() {
       </div>
 
       {/* Tips */}
-      <Card className="bg-slate-900 border-slate-700">
+      <Card className="bg-blue-950/50 backdrop-blur-xl border-blue-400/30 shadow-xl">
         <CardContent className="p-4">
           <h3 className="font-bold text-white mb-2">🎯 Label Tips</h3>
-          <ul className="text-sm space-y-1 text-slate-300">
+          <ul className="text-sm space-y-1 text-blue-200">
             <li>• Build consistent income through streaming and side hustles</li>
             <li>• Grow your social media influence across all platforms</li>
             <li>• Release quality songs regularly to build your catalog</li>
