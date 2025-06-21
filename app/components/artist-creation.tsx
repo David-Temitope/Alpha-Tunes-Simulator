@@ -9,7 +9,6 @@ import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from "next/navigation"
-import { useGameState } from "../context/game-state-context"
 import { useGame } from "../context/game-context"
 
 const formSchema = z.object({
@@ -29,8 +28,7 @@ const formSchema = z.object({
 
 const ArtistCreationForm = () => {
   const router = useRouter()
-  const { setGameState } = useGameState()
-  const { translation, setLanguage, gameState, requestStoragePermission } = useGame()
+  const { translation, setLanguage, gameState, requestStoragePermission, setGameState } = useGame()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
