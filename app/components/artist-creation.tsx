@@ -1,145 +1,166 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Music } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useGameState } from "../context/game-state-context"
 import { useGame } from "../context/game-context"
 
-export default function ArtistCreation() {
-  const { gameState, setGameState } = useGame()
-  const [formData, setFormData] = useState({
-    originalName: "",
-    stageName: "",
-    email: "",
-    genre: "",
-    profileImage: "/placeholder.svg?height=150&width=150",
+const formSchema = z.object({
+  originalName: z.string().min(2, {
+    message: "Original Name must be at least 2 characters.",
+  }),
+  stageName: z.string().min(2, {
+    message: "Stage Name must be at least 2 characters.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  genre: z.string().min(1, {
+    message: "Please select a genre.",
+  }),
+})
+
+const ArtistCreationForm = () => {
+  const router = useRouter()
+  const { setGameState } = useGameState()
+  const { translation, setLanguage, gameState, requestStoragePermission } = useGame()
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      originalName: "",
+      stageName: "",
+      email: "",
+      genre: "",
+    },
   })
 
-  const genres = ["Hip-Hop", "Gospel", "Afrobeat", "Pop", "R&B", "Rock", "Electronic", "Country"]
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    // Do something with the form values.
+    // ✅ This will be type-safe and validated.
+    console.log(values)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (formData.originalName && formData.stageName && formData.email && formData.genre) {
-      setGameState({
-        ...gameState,
-        artist: {
-          ...formData,
-          bio: "",
-        },
-      })
+    const storageGranted = await requestStoragePermission()
+    if (!storageGranted) {
+      alert("Storage permission is required to save your game progress.")
+      return
     }
+
+    setGameState({
+      artist: {
+        originalName: values.originalName,
+        stageName: values.stageName,
+        email: values.email,
+        genre: values.genre,
+      },
+    })
+    router.push("/studio")
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-black/20 border-white/20 text-white">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-            <Music className="w-8 h-8 text-white" />
-          </div>
-          <CardTitle className="text-2xl bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-            Create Your Artist
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="originalName">Original Name</Label>
-              <Input
-                id="originalName"
-                value={formData.originalName}
-                onChange={(e) => setFormData({ ...formData, originalName: e.target.value })}
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                placeholder="Your real name"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="stageName">Stage Name</Label>
-              <Input
-                id="stageName"
-                value={formData.stageName}
-                onChange={(e) => setFormData({ ...formData, stageName: e.target.value })}
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                placeholder="Your artist name"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                placeholder="your@email.com"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="photo">Artist Photo</Label>
-              <Input
-                id="photo"
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) {
-                    const reader = new FileReader()
-                    reader.onload = (e) => {
-                      setFormData({ ...formData, profileImage: e.target?.result as string })
-                    }
-                    reader.readAsDataURL(file)
-                  }
-                }}
-                className="bg-white/10 border-white/20 text-white file:bg-white/20 file:border-0 file:text-white file:rounded"
-              />
-              {formData.profileImage && (
-                <div className="mt-2 flex justify-center">
-                  <img
-                    src={formData.profileImage || "/placeholder.svg"}
-                    alt="Artist preview"
-                    className="w-16 h-16 rounded-full object-cover border-2 border-white/20"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="genre">Genre</Label>
-              <Select value={formData.genre} onValueChange={(value) => setFormData({ ...formData, genre: value })}>
-                <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                  <SelectValue placeholder="Select your genre" />
+    <Card>
+      <CardHeader>
+        <CardTitle>{translation.createArtist || "Create Your Artist"}</CardTitle>
+        <CardDescription>Enter your artist details to start your music career.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <div className="space-y-2">
+              <Label htmlFor="language">{translation.selectLanguage || "Select Language"}</Label>
+              <Select value={gameState.language} onValueChange={setLanguage}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose your language" />
                 </SelectTrigger>
                 <SelectContent>
-                  {genres.map((genre) => (
-                    <SelectItem key={genre} value={genre}>
-                      {genre}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="es">Español</SelectItem>
+                  <SelectItem value="fr">Français</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold"
-            >
-              Start Your Journey
-            </Button>
+            <FormField
+              control={form.control}
+              name="originalName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{translation.originalName || "Original Name"}</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your original name" {...field} />
+                  </FormControl>
+                  <FormDescription>This is the name you were given at birth.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="stageName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{translation.stageName || "Stage Name"}</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your stage name" {...field} />
+                  </FormControl>
+                  <FormDescription>This is the name you will use on stage.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{translation.email || "Email"}</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your email" {...field} />
+                  </FormControl>
+                  <FormDescription>We will use this to contact you about your music career.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="genre"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{translation.genre || "Genre"}</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={translation.selectGenre || "Select Genre"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="pop">Pop</SelectItem>
+                      <SelectItem value="rock">Rock</SelectItem>
+                      <SelectItem value="hiphop">Hip Hop</SelectItem>
+                      <SelectItem value="electronic">Electronic</SelectItem>
+                      <SelectItem value="country">Country</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>What type of music do you make?</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit">{translation.createMyArtist || "Create My Artist"}</Button>
           </form>
-        </CardContent>
-      </Card>
-    </div>
+        </Form>
+      </CardContent>
+    </Card>
   )
 }
+
+export default ArtistCreationForm
+
+import { Label } from "@/components/ui/label"

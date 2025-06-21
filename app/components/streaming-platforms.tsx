@@ -1,485 +1,423 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Play, Upload, TrendingUp, Music, AlertCircle, Lock } from "lucide-react"
-import { useGame } from "../context/game-context"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Slider } from "@/components/ui/slider"
+import { useToast } from "@/components/ui/use-toast"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Progress } from "@/components/ui/progress"
 
-export default function StreamingPlatforms() {
-  const { gameState, addEarnings, addFans, uploadSong, uploadSongToPlatform } = useGame()
-  const [showUploadDialog, setShowUploadDialog] = useState(false)
-  const [showSongSelectDialog, setShowSongSelectDialog] = useState(false)
-  const [selectedSong, setSelectedSong] = useState<string | null>(null)
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
-  const [songData, setSongData] = useState({
-    title: "",
-    genre: "",
-    duration: 180,
-    artwork: "/placeholder.svg?height=200&width=200",
-    rating: 0,
-  })
+const baseQuality = 0.7
 
-  const platforms = [
-    {
-      id: "SoundVibe",
-      name: "SoundVibe",
-      realName: "SoundCloud",
-      earningsPerStream: 0.1,
-      unlocked: true,
-      uploadCost: 0,
-      color: "from-orange-500 to-red-500",
-      difficulty: 1,
-      icon: "🎵",
-      description: "Free platform for emerging artists",
-    },
-    {
-      id: "Amaplay",
-      name: "Amaplay",
-      realName: "Audiomack",
-      earningsPerStream: 0.02,
-      unlocked: true,
-      uploadCost: 0,
-      color: "from-blue-500 to-purple-500",
-      difficulty: 1,
-      icon: "🎧",
-      description: "Free hip-hop focused platform",
-    },
-    {
-      id: "TuneJam",
-      name: "TuneJam",
-      realName: "Boomplay",
-      earningsPerStream: 0.5,
-      unlocked: gameState.earnings >= 100,
-      uploadCost: 50,
-      color: "from-green-500 to-teal-500",
-      difficulty: 2,
-      icon: "🎶",
-      description: "African music streaming giant",
-    },
-    {
-      id: "StreamTunes",
-      name: "StreamTunes",
-      realName: "YouTube Music",
-      earningsPerStream: 2.0,
-      unlocked: gameState.earnings >= 500,
-      uploadCost: 50,
-      color: "from-red-500 to-pink-500",
-      difficulty: 3,
-      icon: "📺",
-      description: "Video-first music platform",
-    },
-    {
-      id: "BeatFlow",
-      name: "BeatFlow",
-      realName: "Tidal",
-      earningsPerStream: 0.25,
-      unlocked: gameState.earnings >= 250,
-      uploadCost: 200,
-      color: "from-cyan-500 to-blue-500",
-      difficulty: 2,
-      icon: "🌊",
-      description: "High-fidelity audio platform",
-    },
-    {
-      id: "Hypefy",
-      name: "Hypefy",
-      realName: "Spotify",
-      earningsPerStream: 3.0,
-      unlocked: gameState.earnings >= 1000,
-      uploadCost: 200,
-      color: "from-green-400 to-emerald-500",
-      difficulty: 4,
-      icon: "🎤",
-      description: "World's largest streaming platform",
-    },
-    {
-      id: "ChartTopper",
-      name: "ChartTopper",
-      realName: "Amazon Music",
-      earningsPerStream: 4.0,
-      unlocked: gameState.earnings >= 2000,
-      uploadCost: 200,
-      color: "from-yellow-500 to-orange-500",
-      difficulty: 4,
-      icon: "👑",
-      description: "Premium streaming service",
-    },
-    {
-      id: "CoreBeats",
-      name: "CoreBeats",
-      realName: "Apple Music",
-      earningsPerStream: 5.0,
-      unlocked: gameState.recordLabel !== null,
-      uploadCost: 1000,
-      color: "from-gray-600 to-gray-800",
-      difficulty: 5,
-      icon: "🍎",
-      description: "Premium platform (Label required)",
-    },
-    {
-      id: "DuhVoes",
-      name: "DuhVoes",
-      realName: "Exclusive Platform",
-      earningsPerStream: 8.0,
-      unlocked: gameState.recordLabel !== null,
-      uploadCost: 1000,
-      color: "from-purple-600 to-indigo-800",
-      difficulty: 5,
-      icon: "💎",
-      description: "Elite platform (Label required)",
-    },
-  ]
+interface Song {
+  id: string
+  title: string
+  genre: string
+  duration: number
+  artwork: string
+  rating: number
+  productionCost: number
+  qualityMultiplier: number
+}
 
-  const handleSongSelect = (songId: string) => {
-    setSelectedSong(songId)
-    setShowSongSelectDialog(true)
+interface StreamingPlatform {
+  id: string
+  name: string
+  marketShare: number
+  royaltyRate: number
+  genrePreference: string
+}
+
+interface GameState {
+  week: number
+  funds: number
+  energy: number
+  fans: number
+}
+
+const initialSongs: Song[] = [
+  {
+    id: "1",
+    title: "Sample Song",
+    genre: "Pop",
+    duration: 200,
+    artwork: "",
+    rating: 0.8,
+    productionCost: 5000,
+    qualityMultiplier: baseQuality,
+  },
+]
+
+const initialPlatforms: StreamingPlatform[] = [
+  {
+    id: "1",
+    name: "Streamify",
+    marketShare: 0.5,
+    royaltyRate: 0.01,
+    genrePreference: "Pop",
+  },
+  {
+    id: "2",
+    name: "TuneWave",
+    marketShare: 0.3,
+    royaltyRate: 0.015,
+    genrePreference: "Rock",
+  },
+  {
+    id: "3",
+    name: "RhythmVerse",
+    marketShare: 0.2,
+    royaltyRate: 0.02,
+    genrePreference: "Electronic",
+  },
+]
+
+const initialGameState: GameState = {
+  week: 1,
+  funds: 10000,
+  energy: 10,
+  fans: 100,
+}
+
+const StreamingPlatforms = () => {
+  const [songs, setSongs] = useState<Song[]>(initialSongs)
+  const [platforms, setPlatforms] = useState<StreamingPlatform[]>(initialPlatforms)
+  const [gameState, setGameState] = useState<GameState>(initialGameState)
+
+  const [songTitle, setSongTitle] = useState("")
+  const [songGenre, setSongGenre] = useState("Pop")
+  const [songRating, setSongRating] = useState(0.5)
+  const [productionCost, setProductionCost] = useState(5000)
+  const [isCreatingSong, setIsCreatingSong] = useState(false)
+  const [energyInvestment, setEnergyInvestment] = useState(1)
+
+  const { toast } = useToast()
+
+  useEffect(() => {
+    // Load game state from local storage on component mount
+    const storedGameState = localStorage.getItem("gameState")
+    if (storedGameState) {
+      setGameState(JSON.parse(storedGameState))
+    }
+  }, [])
+
+  useEffect(() => {
+    // Save game state to local storage whenever it changes
+    localStorage.setItem("gameState", JSON.stringify(gameState))
+  }, [gameState])
+
+  const calculateEarnings = (song: Song, platform: StreamingPlatform) => {
+    if (song.genre === platform.genrePreference) {
+      return song.rating * platform.royaltyRate * platform.marketShare * gameState.fans * song.qualityMultiplier
+    } else {
+      return song.rating * platform.royaltyRate * platform.marketShare * gameState.fans * song.qualityMultiplier * 0.5
+    }
   }
 
-  const handlePlatformToggle = (platformId: string) => {
-    setSelectedPlatforms((prev) =>
-      prev.includes(platformId) ? prev.filter((id) => id !== platformId) : [...prev, platformId],
-    )
-  }
-
-  const handleUploadToSelectedPlatforms = async () => {
-    if (!selectedSong || selectedPlatforms.length === 0) return
-
-    const song = gameState.songs.find((s) => s.id === selectedSong)
-    if (!song) return
-
-    // Calculate total upload cost
-    const totalCost = selectedPlatforms.reduce((cost, platformId) => {
-      const platform = platforms.find((p) => p.id === platformId)
-      return cost + (platform?.uploadCost || 0)
-    }, 0)
-
-    if (gameState.earnings < totalCost) {
-      alert("Not enough money for upload costs!")
+  const handleCreateSong = () => {
+    if (gameState.funds < productionCost) {
+      alert("Not enough funds to produce this song!")
       return
     }
 
-    // Deduct upload costs
-    addEarnings(-totalCost)
+    if (gameState.energy < energyInvestment) {
+      alert("Not enough energy! Complete side hustles or advance to next week.")
+      return
+    }
 
-    // Upload to selected platforms
-    selectedPlatforms.forEach((platformId) => {
-      uploadSongToPlatform(selectedSong, platformId)
+    setIsCreatingSong(true)
+
+    const uploadSong = async (songData: Omit<Song, "id">, energyInvestment: number) => {
+      // Simulate song creation and upload
+      return new Promise<void>((resolve) => {
+        setTimeout(() => {
+          const newSong: Song = {
+            id: String(songs.length + 1),
+            ...songData,
+          }
+          setSongs([...songs, newSong])
+          setGameState({
+            ...gameState,
+            funds: gameState.funds - productionCost,
+            energy: gameState.energy - energyInvestment,
+          })
+          setIsCreatingSong(false)
+          toast({
+            title: "Song Created!",
+            description: `${songTitle} has been released.`,
+          })
+          resolve()
+        }, 2000)
+      })
+    }
+
+    uploadSong(
+      {
+        title: songTitle,
+        genre: songGenre,
+        duration: Math.floor(Math.random() * 180) + 120,
+        artwork: "",
+        rating: songRating,
+        productionCost: productionCost,
+        qualityMultiplier: baseQuality,
+      },
+      energyInvestment,
+    )
+  }
+
+  const handleAdvanceWeek = () => {
+    let totalEarnings = 0
+
+    songs.forEach((song) => {
+      platforms.forEach((platform) => {
+        totalEarnings += calculateEarnings(song, platform)
+      })
     })
 
-    setShowSongSelectDialog(false)
-    setSelectedSong(null)
-    setSelectedPlatforms([])
+    setGameState({
+      ...gameState,
+      week: gameState.week + 1,
+      funds: gameState.funds + totalEarnings,
+      energy: Math.min(gameState.energy + 5, 10),
+    })
+
+    toast({
+      title: "Week Advanced!",
+      description: `You earned $${totalEarnings.toFixed(2)} this week.`,
+    })
   }
-
-  const handleSongUpload = () => {
-    if (songData.title && songData.genre) {
-      const skillAverage = Object.values(gameState.skills).reduce((a, b) => a + b, 0) / 6
-      const rating = Math.min(10, skillAverage / 10)
-
-      uploadSong({
-        ...songData,
-        rating,
-        productionCost: 500,
-        qualityMultiplier: 1,
-      })
-
-      setSongData({
-        title: "",
-        genre: "",
-        duration: 180,
-        artwork: "/placeholder.svg?height=200&width=200",
-        rating: 0,
-      })
-      setShowUploadDialog(false)
-    }
-  }
-
-  // Filter songs that haven't been uploaded to all platforms
-  const availableSongs = gameState.songs.filter((song) => {
-    const unlockedPlatforms = platforms.filter((p) => p.unlocked)
-    return song.uploadedPlatforms.length < unlockedPlatforms.length
-  })
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-6 border border-slate-700">
-        <h2 className="text-2xl font-bold text-white mb-2">Music Distribution</h2>
-        <p className="text-slate-300">Upload your songs to streaming platforms and earn from streams</p>
+    <div className="container mx-auto py-10">
+      <h1 className="text-3xl font-bold text-center mb-8">Music Mogul</h1>
+
+      {/* Game State */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Week</CardTitle>
+            <CardDescription>Current week in the game.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{gameState.week}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Funds</CardTitle>
+            <CardDescription>Available funds for song production.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">${gameState.funds.toFixed(2)}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Energy</CardTitle>
+            <CardDescription>Energy available for song creation.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Progress value={(gameState.energy / 10) * 100} />
+              <p className="text-sm text-muted-foreground">{gameState.energy} / 10</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Fans</CardTitle>
+            <CardDescription>Your loyal fan base.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{gameState.fans}</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Upload Song Button */}
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogTrigger asChild>
-          <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg shadow-lg">
-            <Music className="w-5 h-5 mr-2" />
-            Create New Song
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Create New Song</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="title" className="text-slate-300">
-                Song Title
-              </Label>
-              <Input
-                id="title"
-                value={songData.title}
-                onChange={(e) => setSongData({ ...songData, title: e.target.value })}
-                className="bg-slate-800 border-slate-600 text-white mt-1"
-                placeholder="Enter song title"
-              />
-            </div>
-            <div>
-              <Label htmlFor="genre" className="text-slate-300">
-                Genre
-              </Label>
-              <Select value={songData.genre} onValueChange={(value) => setSongData({ ...songData, genre: value })}>
-                <SelectTrigger className="bg-slate-800 border-slate-600 text-white mt-1">
-                  <SelectValue placeholder="Select genre" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-600">
-                  <SelectItem value="Hip-Hop">Hip-Hop</SelectItem>
-                  <SelectItem value="Gospel">Gospel</SelectItem>
-                  <SelectItem value="Afrobeat">Afrobeat</SelectItem>
-                  <SelectItem value="Pop">Pop</SelectItem>
-                  <SelectItem value="R&B">R&B</SelectItem>
-                  <SelectItem value="Rock">Rock</SelectItem>
-                  <SelectItem value="Electronic">Electronic</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              onClick={handleSongUpload}
-              className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
-              disabled={!songData.title || !songData.genre}
+      {/* Song Creation */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Create New Song</CardTitle>
+          <CardDescription>Produce a new song to gain fans and funds.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Song Title</Label>
+            <Input
+              id="title"
+              value={songTitle}
+              onChange={(e) => setSongTitle(e.target.value)}
+              className="bg-gray-800 border-gray-700 text-white"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="genre">Genre</Label>
+            <select
+              id="genre"
+              value={songGenre}
+              onChange={(e) => setSongGenre(e.target.value)}
+              className="bg-gray-800 border-gray-700 text-white rounded"
             >
-              Create Song
-            </Button>
+              <option value="Pop">Pop</option>
+              <option value="Rock">Rock</option>
+              <option value="Electronic">Electronic</option>
+              <option value="Hip Hop">Hip Hop</option>
+              <option value="Country">Country</option>
+            </select>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Songs Ready for Upload */}
-      <Card className="bg-slate-900 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Music className="w-5 h-5 text-blue-400" />
-            Songs Ready for Upload ({availableSongs.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {availableSongs.length > 0 ? (
-            availableSongs.map((song) => (
-              <div
-                key={song.id}
-                className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-700"
-              >
-                <div className="flex items-center gap-3">
-                  <img
-                    src={song.artwork || "/placeholder.svg"}
-                    alt={song.title}
-                    className="w-12 h-12 rounded-lg object-cover"
-                  />
-                  <div>
-                    <h4 className="font-semibold text-white">{song.title}</h4>
-                    <p className="text-sm text-slate-400">
-                      {song.genre} • {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "0")}
-                    </p>
-                    <p className="text-xs text-slate-500">Uploaded to: {song.uploadedPlatforms.length} platforms</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-yellow-500/20 text-yellow-400">⭐ {song.rating.toFixed(1)}</Badge>
-                  <Button
-                    onClick={() => handleSongSelect(song.id)}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Upload className="w-4 h-4 mr-1" />
-                    Upload
-                  </Button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-8 text-slate-400">
-              <Music className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No songs available for upload</p>
-              <p className="text-sm">Create new songs to get started</p>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="rating">Song Rating</Label>
+            <Slider
+              id="rating"
+              defaultValue={[songRating * 100]}
+              max={100}
+              step={1}
+              onValueChange={(value) => setSongRating(value[0] / 100)}
+              className="bg-gray-800"
+            />
+            <p className="text-xs text-gray-400">
+              Set the potential rating of the song. Current rating: {songRating.toFixed(2)}
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cost">Production Cost</Label>
+            <Input
+              id="cost"
+              type="number"
+              value={productionCost}
+              onChange={(e) => setProductionCost(Number.parseInt(e.target.value) || 5000)}
+              className="bg-gray-800 border-gray-700 text-white"
+            />
+            <p className="text-xs text-gray-400">Set the production cost for the song.</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="energy">Energy Investment (1-{gameState.energy})</Label>
+            <Input
+              id="energy"
+              type="number"
+              min="1"
+              max={gameState.energy}
+              value={energyInvestment}
+              onChange={(e) =>
+                setEnergyInvestment(Math.max(1, Math.min(gameState.energy, Number.parseInt(e.target.value) || 1)))
+              }
+              className="bg-gray-800 border-gray-700 text-white"
+            />
+            <p className="text-xs text-gray-400">
+              More energy = higher song quality. Current energy: {gameState.energy}
+            </p>
+          </div>
+          <Button
+            onClick={handleCreateSong}
+            disabled={isCreatingSong}
+            className="bg-green-500 text-white hover:bg-green-600"
+          >
+            {isCreatingSong ? "Creating..." : "Create Song"}
+          </Button>
         </CardContent>
       </Card>
 
-      {/* Platform Selection Dialog */}
-      <Dialog open={showSongSelectDialog} onOpenChange={setShowSongSelectDialog}>
-        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Select Platforms to Upload</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 max-h-96 overflow-y-auto">
-            {platforms.map((platform) => {
-              const isAlreadyUploaded =
-                selectedSong &&
-                gameState.songs.find((s) => s.id === selectedSong)?.uploadedPlatforms.includes(platform.id)
-              const canAfford = gameState.earnings >= platform.uploadCost
-              const isUnlocked = platform.unlocked
-
-              return (
-                <div
-                  key={platform.id}
-                  className={`flex items-center justify-between p-4 rounded-lg border ${
-                    isAlreadyUploaded
-                      ? "bg-green-900/20 border-green-700"
-                      : !isUnlocked
-                        ? "bg-slate-800/50 border-slate-700 opacity-50"
-                        : !canAfford
-                          ? "bg-red-900/20 border-red-700"
-                          : "bg-slate-800 border-slate-700"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 bg-gradient-to-r ${platform.color} rounded-lg flex items-center justify-center text-xl`}
-                    >
-                      {isUnlocked ? platform.icon : "🔒"}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">{platform.name}</h4>
-                      <p className="text-sm text-slate-400">{platform.description}</p>
-                      <div className="flex items-center gap-4 mt-1">
-                        <span className="text-xs text-green-400">${platform.earningsPerStream.toFixed(2)}/stream</span>
-                        {platform.uploadCost > 0 && (
-                          <span className="text-xs text-yellow-400">Upload: ${platform.uploadCost}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {isAlreadyUploaded ? (
-                      <Badge className="bg-green-500/20 text-green-400">Already Uploaded</Badge>
-                    ) : !isUnlocked ? (
-                      <Badge className="bg-slate-500/20 text-slate-400">
-                        <Lock className="w-3 h-3 mr-1" />
-                        Locked
-                      </Badge>
-                    ) : !canAfford ? (
-                      <Badge className="bg-red-500/20 text-red-400">
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                        Can't Afford
-                      </Badge>
-                    ) : (
-                      <Checkbox
-                        checked={selectedPlatforms.includes(platform.id)}
-                        onCheckedChange={() => handlePlatformToggle(platform.id)}
-                        className="border-slate-600"
-                      />
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {selectedPlatforms.length > 0 && (
-            <div className="border-t border-slate-700 pt-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-slate-300">Total Upload Cost:</span>
-                <span className="font-bold text-yellow-400">
-                  $
-                  {selectedPlatforms
-                    .reduce((cost, platformId) => {
-                      const platform = platforms.find((p) => p.id === platformId)
-                      return cost + (platform?.uploadCost || 0)
-                    }, 0)
-                    .toLocaleString()}
-                </span>
-              </div>
-              <Button
-                onClick={handleUploadToSelectedPlatforms}
-                className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
-                disabled={selectedPlatforms.length === 0}
-              >
-                Upload to {selectedPlatforms.length} Platform{selectedPlatforms.length > 1 ? "s" : ""}
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Platform Overview */}
-      <Card className="bg-slate-900 border-slate-700">
+      {/* Song List */}
+      <Card className="mb-8">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-green-400" />
-            Platform Overview
-          </CardTitle>
+          <CardTitle>Your Songs</CardTitle>
+          <CardDescription>List of your created songs.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3">
-            {platforms.map((platform) => (
-              <div
-                key={platform.id}
-                className={`flex items-center justify-between p-3 rounded-lg ${
-                  platform.unlocked ? "bg-slate-800" : "bg-slate-800/50"
-                } border border-slate-700`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-8 h-8 bg-gradient-to-r ${platform.color} rounded-lg flex items-center justify-center text-sm`}
-                  >
-                    {platform.unlocked ? platform.icon : "🔒"}
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-white">{platform.name}</h4>
-                    <p className="text-xs text-slate-400">{platform.description}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-semibold text-green-400">${platform.earningsPerStream.toFixed(2)}</div>
-                  <div className="text-xs text-slate-400">per stream</div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Genre</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead>Rating</TableHead>
+                <TableHead>Production Cost</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {songs.map((song) => (
+                <TableRow key={song.id}>
+                  <TableCell>{song.title}</TableCell>
+                  <TableCell>{song.genre}</TableCell>
+                  <TableCell>{song.duration} seconds</TableCell>
+                  <TableCell>{song.rating.toFixed(2)}</TableCell>
+                  <TableCell>${song.productionCost}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
-      {/* Streaming Stats */}
-      <Card className="bg-slate-900 border-slate-700">
+      {/* Streaming Platforms */}
+      <Card className="mb-8">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Play className="w-5 h-5 text-purple-400" />
-            Your Streaming Stats
-          </CardTitle>
+          <CardTitle>Streaming Platforms</CardTitle>
+          <CardDescription>List of available streaming platforms and their preferences.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-slate-800 rounded-lg">
-              <div className="text-2xl font-bold text-blue-400">{gameState.songs.length}</div>
-              <p className="text-sm text-slate-400">Total Songs</p>
-            </div>
-            <div className="text-center p-4 bg-slate-800 rounded-lg">
-              <div className="text-2xl font-bold text-green-400">
-                {gameState.songs.reduce((total, song) => total + song.uploadedPlatforms.length, 0)}
-              </div>
-              <p className="text-sm text-slate-400">Platform Uploads</p>
-            </div>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Market Share</TableHead>
+                <TableHead>Royalty Rate</TableHead>
+                <TableHead>Genre Preference</TableHead>
+                <TableHead>Earnings/Week</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {platforms.map((platform) => (
+                <TableRow key={platform.id}>
+                  <TableCell>{platform.name}</TableCell>
+                  <TableCell>{platform.marketShare * 100}%</TableCell>
+                  <TableCell>{platform.royaltyRate}</TableCell>
+                  <TableCell>{platform.genrePreference}</TableCell>
+                  <TableCell>${songs.reduce((total, song) => total + calculateEarnings(song, platform), 0)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
+
+      {/* Advance Week */}
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button className="bg-blue-500 text-white hover:bg-blue-600">Advance Week</Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Advance to Next Week?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Advancing to the next week will calculate your earnings and consume energy.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleAdvanceWeek}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
+
+export default StreamingPlatforms

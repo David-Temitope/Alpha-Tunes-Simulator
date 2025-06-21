@@ -1,376 +1,271 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import {
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  ShoppingCart,
-  Package,
-  Eye,
-  ArrowUpRight,
-  ArrowDownRight,
-} from "lucide-react"
-import { LineChart, Line, ResponsiveContainer } from "recharts"
-import { useGame } from "../context/game-context"
 
-export default function TradingCenter() {
-  const { gameState, buyTradeItem, sellTradeItem } = useGame()
-  const [selectedItem, setSelectedItem] = useState<string | null>(null)
-  const [tradeQuantity, setTradeQuantity] = useState(1)
-  const [tradeAction, setTradeAction] = useState<"buy" | "sell">("buy")
-  const [showTradeDialog, setShowTradeDialog] = useState(false)
+interface TradeItem {
+  id: string
+  name: string
+  currentPrice: number
+  trend: "up" | "down" | "neutral"
+  owned: number
+  buyPrice?: number
+  volume24h?: number
+  marketCap?: number
+  volatility: number
+  priceHistory: number[]
+}
 
-  const categoryIcons = {
-    sneakers: "👟",
-    gear: "🎧",
-    beats: "🎵",
-    crypto: "₿",
-    vinyl: "💿",
-    nft: "🖼️",
+interface GameState {
+  earnings: number
+  tradeItems: TradeItem[]
+}
+
+const TradingCenter = () => {
+  const [gameState, setGameState] = useState<GameState>({
+    earnings: 10000,
+    tradeItems: [
+      {
+        id: "item1",
+        name: "TechCorp",
+        currentPrice: 150.25,
+        trend: "up",
+        owned: 0,
+        buyPrice: undefined,
+        volume24h: 500000,
+        marketCap: 1000000000,
+        volatility: 0.02,
+        priceHistory: Array.from({ length: 30 }, () => 150 + (Math.random() - 0.5) * 10),
+      },
+      {
+        id: "item2",
+        name: "EnviroGreen",
+        currentPrice: 75.5,
+        trend: "down",
+        owned: 0,
+        buyPrice: undefined,
+        volume24h: 300000,
+        marketCap: 500000000,
+        volatility: 0.015,
+        priceHistory: Array.from({ length: 30 }, () => 75 + (Math.random() - 0.5) * 5),
+      },
+      {
+        id: "item3",
+        name: "MediPlus",
+        currentPrice: 220.75,
+        trend: "neutral",
+        owned: 0,
+        buyPrice: undefined,
+        volume24h: 750000,
+        marketCap: 1500000000,
+        volatility: 0.025,
+        priceHistory: Array.from({ length: 30 }, () => 220 + (Math.random() - 0.5) * 15),
+      },
+    ],
+  })
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setGameState((prevGameState) => {
+        const updatedTradeItems = prevGameState.tradeItems.map((item) => {
+          const randomChange = (Math.random() - 0.5) * item.volatility * item.currentPrice
+          const newPrice = Math.max(1, item.currentPrice + randomChange) // Ensure price doesn't go below 1
+          const trendChange = newPrice > item.currentPrice ? "up" : newPrice < item.currentPrice ? "down" : "neutral"
+
+          const newPriceHistory = [...item.priceHistory.slice(1), newPrice]
+
+          return {
+            ...item,
+            currentPrice: newPrice,
+            trend: trendChange,
+            priceHistory: newPriceHistory,
+          }
+        })
+
+        return {
+          ...prevGameState,
+          tradeItems: updatedTradeItems,
+        }
+      })
+    }, 3000)
+
+    return () => clearInterval(intervalId)
+  }, [])
+
+  const handleBuy = (itemId: string) => {
+    setGameState((prevGameState) => {
+      const itemIndex = prevGameState.tradeItems.findIndex((item) => item.id === itemId)
+      if (itemIndex === -1) {
+        return prevGameState
+      }
+
+      const item = prevGameState.tradeItems[itemIndex]
+      if (prevGameState.earnings < item.currentPrice) {
+        return prevGameState
+      }
+
+      const updatedItems = [...prevGameState.tradeItems]
+      const updatedItem = { ...item }
+
+      const currentOwned = updatedItem.owned || 0
+      const currentBuyPrice = updatedItem.buyPrice || 0
+
+      const totalCost = item.currentPrice
+      const newOwned = currentOwned + 1
+      const newBuyPrice = (currentBuyPrice * currentOwned + item.currentPrice) / newOwned
+
+      updatedItem.owned = newOwned
+      updatedItem.buyPrice = newBuyPrice
+      updatedItems[itemIndex] = updatedItem
+
+      return {
+        ...prevGameState,
+        earnings: prevGameState.earnings - totalCost,
+        tradeItems: updatedItems,
+      }
+    })
   }
 
-  const categoryColors = {
-    sneakers: "from-red-500 to-pink-500",
-    gear: "from-purple-500 to-indigo-500",
-    beats: "from-blue-500 to-cyan-500",
-    crypto: "from-yellow-500 to-orange-500",
-    vinyl: "from-green-500 to-teal-500",
-    nft: "from-pink-500 to-purple-500",
-  }
+  const handleSell = (itemId: string) => {
+    setGameState((prevGameState) => {
+      const itemIndex = prevGameState.tradeItems.findIndex((item) => item.id === itemId)
+      if (itemIndex === -1) {
+        return prevGameState
+      }
 
-  const portfolioValue = gameState.tradeItems.reduce((total, item) => {
-    return total + item.owned * item.currentPrice
-  }, 0)
+      const item = prevGameState.tradeItems[itemIndex]
+      if (item.owned === 0) {
+        return prevGameState
+      }
 
-  const totalInvested = gameState.tradeItems.reduce((total, item) => {
-    return total + (item.buyPrice || 0) * item.owned
-  }, 0)
+      const updatedItems = [...prevGameState.tradeItems]
+      const updatedItem = { ...item }
 
-  const totalProfitLoss = portfolioValue - totalInvested
+      updatedItem.owned = item.owned - 1
+      const earnings = prevGameState.earnings + item.currentPrice
+      updatedItems[itemIndex] = updatedItem
 
-  const handleTrade = () => {
-    if (!selectedItem) return
-
-    const success =
-      tradeAction === "buy" ? buyTradeItem(selectedItem, tradeQuantity) : sellTradeItem(selectedItem, tradeQuantity)
-
-    if (success) {
-      setShowTradeDialog(false)
-      setTradeQuantity(1)
-    }
-  }
-
-  const openTradeDialog = (itemId: string, action: "buy" | "sell") => {
-    setSelectedItem(itemId)
-    setTradeAction(action)
-    setShowTradeDialog(true)
-  }
-
-  const getChartData = (item: (typeof gameState.tradeItems)[0]) => {
-    return item.priceHistory.map((price, index) => ({
-      time: index,
-      price,
-    }))
-  }
-
-  const getPriceChange = (item: (typeof gameState.tradeItems)[0]) => {
-    if (item.priceHistory.length < 2) return 0
-    const current = item.currentPrice
-    const previous = item.priceHistory[item.priceHistory.length - 2]
-    return ((current - previous) / previous) * 100
+      return {
+        ...prevGameState,
+        earnings: earnings,
+        tradeItems: updatedItems,
+      }
+    })
   }
 
   return (
-    <div className="space-y-4">
-      {/* Portfolio Header - Stock Market Style */}
-      <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
-            <BarChart3 className="w-6 h-6 text-green-400" />
-            Hustler's Market Dashboard
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-white/10 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Package className="w-5 h-5 text-blue-400" />
-                <span className="text-sm opacity-80">Portfolio Value</span>
-              </div>
-              <div className="text-2xl font-bold text-green-400">${portfolioValue.toFixed(2)}</div>
-              <div
-                className={`text-sm flex items-center gap-1 ${totalProfitLoss >= 0 ? "text-green-400" : "text-red-400"}`}
-              >
-                {totalProfitLoss >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}$
-                {Math.abs(totalProfitLoss).toFixed(2)} (
-                {((totalProfitLoss / Math.max(totalInvested, 1)) * 100).toFixed(1)}%)
-              </div>
-            </div>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-semibold mb-4 text-white">Trading Center</h1>
+      <div className="mb-4">
+        <span className="text-gray-400">Current Earnings:</span>
+        <span className="text-white font-mono">${gameState.earnings.toFixed(2)}</span>
+      </div>
 
-            <div className="p-4 bg-white/10 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="w-5 h-5 text-yellow-400" />
-                <span className="text-sm opacity-80">Cash Balance</span>
-              </div>
-              <div className="text-2xl font-bold text-yellow-400">${gameState.earnings.toFixed(2)}</div>
-              <div className="text-sm opacity-60">Available for trading</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Market Overview */}
-      <Tabs defaultValue="market" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-black/30 backdrop-blur-lg border-white/30">
-          <TabsTrigger value="market" className="text-white data-[state=active]:bg-white/20">
-            Market
-          </TabsTrigger>
-          <TabsTrigger value="portfolio" className="text-white data-[state=active]:bg-white/20">
-            My Holdings
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="market" className="space-y-4">
-          {/* Market Items */}
-          <div className="space-y-3">
-            {gameState.tradeItems.map((item) => {
-              const priceChange = getPriceChange(item)
-              const chartData = getChartData(item)
-
-              return (
-                <Card
-                  key={item.id}
-                  className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl transform hover:scale-105 transition-all duration-300"
+      {/* Add market trend indicators and volume information: */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {gameState.tradeItems.map((item) => (
+          <Card key={item.id} className="bg-gray-800 border-gray-700">
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-semibold text-white capitalize">{item.name}</h3>
+                <div
+                  className={`px-2 py-1 rounded text-xs ${
+                    item.trend === "up"
+                      ? "bg-green-900 text-green-300"
+                      : item.trend === "down"
+                        ? "bg-red-900 text-red-300"
+                        : "bg-gray-700 text-gray-300"
+                  }`}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      {/* Item Icon */}
-                      <div
-                        className={`w-12 h-12 bg-gradient-to-r ${categoryColors[item.category]} rounded-xl flex items-center justify-center shadow-lg text-2xl`}
-                      >
-                        {categoryIcons[item.category]}
-                      </div>
+                  {item.trend === "up" ? "↗" : item.trend === "down" ? "↘" : "→"} {item.trend.toUpperCase()}
+                </div>
+              </div>
 
-                      {/* Item Info */}
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <h3 className="font-bold text-lg">{item.name}</h3>
-                            <Badge className="bg-white/10 text-white capitalize">{item.category}</Badge>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xl font-bold">${item.currentPrice.toFixed(2)}</div>
-                            <div
-                              className={`text-sm flex items-center gap-1 ${priceChange >= 0 ? "text-green-400" : "text-red-400"}`}
-                            >
-                              {priceChange >= 0 ? (
-                                <TrendingUp className="w-4 h-4" />
-                              ) : (
-                                <TrendingDown className="w-4 h-4" />
-                              )}
-                              {priceChange.toFixed(1)}%
-                            </div>
-                          </div>
-                        </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Current Price:</span>
+                  <span className="text-white font-mono">${item.currentPrice.toFixed(2)}</span>
+                </div>
 
-                        {/* Mini Chart */}
-                        <div className="h-16 mb-3">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={chartData}>
-                              <Line
-                                type="monotone"
-                                dataKey="price"
-                                stroke={priceChange >= 0 ? "#10b981" : "#ef4444"}
-                                strokeWidth={2}
-                                dot={false}
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
+                {item.owned > 0 && item.buyPrice && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Avg Buy Price:</span>
+                    <span className="text-white font-mono">${item.buyPrice.toFixed(2)}</span>
+                  </div>
+                )}
 
-                        {/* Action Buttons */}
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => openTradeDialog(item.id, "buy")}
-                            className="flex-1 bg-green-500 hover:bg-green-600"
-                            disabled={gameState.earnings < item.currentPrice}
-                          >
-                            <ShoppingCart className="w-4 h-4 mr-1" />
-                            Buy
-                          </Button>
-                          <Button
-                            onClick={() => openTradeDialog(item.id, "sell")}
-                            className="flex-1 bg-red-500 hover:bg-red-600"
-                            disabled={item.owned === 0}
-                          >
-                            <DollarSign className="w-4 h-4 mr-1" />
-                            Sell
-                          </Button>
-                          {item.owned > 0 && (
-                            <Badge className="bg-blue-500/20 text-blue-400 px-3 py-1">Own: {item.owned}</Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        </TabsContent>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">24h Volume:</span>
+                  <span className="text-white font-mono">${(item.volume24h || 0).toLocaleString()}</span>
+                </div>
 
-        <TabsContent value="portfolio" className="space-y-4">
-          {/* Portfolio Holdings */}
-          <div className="space-y-3">
-            {gameState.tradeItems
-              .filter((item) => item.owned > 0)
-              .map((item) => {
-                const currentValue = item.owned * item.currentPrice
-                const investedValue = item.owned * (item.buyPrice || 0)
-                const profitLoss = currentValue - investedValue
-                const profitLossPercent = ((profitLoss / Math.max(investedValue, 1)) * 100).toFixed(1)
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Market Cap:</span>
+                  <span className="text-white font-mono">${(item.marketCap || 0).toLocaleString()}</span>
+                </div>
 
-                return (
-                  <Card key={item.id} className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-10 h-10 bg-gradient-to-r ${categoryColors[item.category]} rounded-lg flex items-center justify-center text-xl`}
-                          >
-                            {categoryIcons[item.category]}
-                          </div>
-                          <div>
-                            <h3 className="font-bold">{item.name}</h3>
-                            <p className="text-sm opacity-80">Qty: {item.owned}</p>
-                          </div>
-                        </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Volatility:</span>
+                  <span className="text-white">{(item.volatility * 100).toFixed(1)}%</span>
+                </div>
 
-                        <div className="text-right">
-                          <div className="font-bold">${currentValue.toFixed(2)}</div>
-                          <div
-                            className={`text-sm flex items-center gap-1 ${profitLoss >= 0 ? "text-green-400" : "text-red-400"}`}
-                          >
-                            {profitLoss >= 0 ? (
-                              <ArrowUpRight className="w-4 h-4" />
-                            ) : (
-                              <ArrowDownRight className="w-4 h-4" />
-                            )}
-                            ${Math.abs(profitLoss).toFixed(2)} ({profitLossPercent}%)
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+                {item.owned > 0 && (
+                  <div className="flex justify-between font-semibold">
+                    <span className="text-gray-400">Owned:</span>
+                    <span className="text-white">{item.owned}</span>
+                  </div>
+                )}
+              </div>
 
-            {gameState.tradeItems.filter((item) => item.owned > 0).length === 0 && (
-              <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl">
-                <CardContent className="p-8 text-center">
-                  <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="font-bold mb-2">No Holdings Yet</h3>
-                  <p className="text-sm opacity-80">Start trading to build your portfolio!</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Trade Dialog */}
-      <Dialog open={showTradeDialog} onOpenChange={setShowTradeDialog}>
-        <DialogContent className="bg-black/90 border-white/20 text-white">
-          <DialogHeader>
-            <DialogTitle>
-              {tradeAction === "buy" ? "Buy" : "Sell"}{" "}
-              {selectedItem ? gameState.tradeItems.find((i) => i.id === selectedItem)?.name : ""}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedItem && (
-            <div className="space-y-4">
-              {(() => {
-                const item = gameState.tradeItems.find((i) => i.id === selectedItem)!
-                const totalCost = item.currentPrice * tradeQuantity
-                const canAfford = gameState.earnings >= totalCost
-                const canSell = item.owned >= tradeQuantity
-
-                return (
-                  <>
-                    <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg">
-                      <span>Current Price:</span>
-                      <span className="font-bold">${item.currentPrice.toFixed(2)}</span>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium">Quantity</label>
-                      <Input
-                        type="number"
-                        min="1"
-                        max={tradeAction === "sell" ? item.owned : Math.floor(gameState.earnings / item.currentPrice)}
-                        value={tradeQuantity}
-                        onChange={(e) => setTradeQuantity(Number.parseInt(e.target.value) || 1)}
-                        className="bg-white/10 border-white/20 text-white"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg">
-                      <span>Total {tradeAction === "buy" ? "Cost" : "Value"}:</span>
-                      <span className="font-bold text-lg">${totalCost.toFixed(2)}</span>
-                    </div>
-
-                    {tradeAction === "sell" && item.buyPrice && (
-                      <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg">
-                        <span>Profit/Loss:</span>
-                        <span
-                          className={`font-bold ${
-                            totalCost - item.buyPrice * tradeQuantity >= 0 ? "text-green-400" : "text-red-400"
-                          }`}
-                        >
-                          ${(totalCost - item.buyPrice * tradeQuantity).toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-
-                    <Button
-                      onClick={handleTrade}
-                      disabled={tradeAction === "buy" ? !canAfford : !canSell}
-                      className={`w-full ${
-                        tradeAction === "buy" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"
+              {/* Price chart simulation */}
+              <div className="mt-3 h-16 bg-gray-900 rounded flex items-end justify-between px-1">
+                {item.priceHistory.slice(-10).map((price, index) => {
+                  const maxPrice = Math.max(...item.priceHistory.slice(-10))
+                  const minPrice = Math.min(...item.priceHistory.slice(-10))
+                  const height = ((price - minPrice) / (maxPrice - minPrice)) * 100
+                  return (
+                    <div
+                      key={index}
+                      className={`w-2 rounded-t ${
+                        index === item.priceHistory.slice(-10).length - 1
+                          ? item.trend === "up"
+                            ? "bg-green-500"
+                            : item.trend === "down"
+                              ? "bg-red-500"
+                              : "bg-gray-500"
+                          : "bg-gray-600"
                       }`}
-                    >
-                      {tradeAction === "buy" ? "Buy" : "Sell"} {tradeQuantity} {item.name}
-                    </Button>
-                  </>
-                )
-              })()}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+                      style={{ height: `${Math.max(height, 5)}%` }}
+                    />
+                  )
+                })}
+              </div>
 
-      {/* Market News & Tips */}
-      <Card className="bg-black/30 backdrop-blur-lg border-white/30 text-white shadow-2xl">
-        <CardContent className="p-4">
-          <h3 className="font-bold mb-2">📈 Market News & Tips</h3>
-          <ul className="text-sm space-y-1 opacity-80">
-            <li>• Sneaker prices fluctuate based on celebrity endorsements</li>
-            <li>• Studio gear holds value well but has lower volatility</li>
-            <li>• Beat packs can be flipped quickly for moderate profits</li>
-            <li>• GrooveCoin is highly volatile - high risk, high reward</li>
-            <li>• Rare vinyl appreciates slowly but steadily</li>
-            <li>• NFTs are extremely risky but can yield massive returns</li>
-          </ul>
-        </CardContent>
-      </Card>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  onClick={() => handleBuy(item.id)}
+                  disabled={gameState.earnings < item.currentPrice}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  size="sm"
+                >
+                  Buy ${item.currentPrice.toFixed(2)}
+                </Button>
+                <Button
+                  onClick={() => handleSell(item.id)}
+                  disabled={item.owned === 0}
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                  size="sm"
+                >
+                  Sell
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   )
 }
+
+export default TradingCenter

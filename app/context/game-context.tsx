@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useState, type ReactNode, useEffect } from "react"
+import { createContext, useContext, useState, type ReactNode, useEffect } from "react"
 import { AndroidPermissions } from "../lib/android-permissions"
 import { getTranslation, type Translation } from "../lib/translations"
 
@@ -669,17 +669,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }
 
   const setLanguage = (language: string) => {
-    setGameState(prev => ({ ...prev, language }))
+    setGameState((prev) => ({ ...prev, language }))
   }
 
   const requestStoragePermission = async (): Promise<boolean> => {
     const granted = await AndroidPermissions.requestStoragePermission()
-    setGameState(prev => ({ ...prev, storagePermissionGranted: granted }))
+    setGameState((prev) => ({ ...prev, storagePermissionGranted: granted }))
     return granted
   }
 
   const toggleMusic = () => {
-    setGameState(prev => ({ ...prev, musicMuted: !prev.musicMuted }))
+    setGameState((prev) => ({ ...prev, musicMuted: !prev.musicMuted }))
   }
 
   const addFinancialRecord = (type: "income" | "expense", category: string, amount: number, description: string) => {
@@ -767,7 +767,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  const uploadSong = (songData: Omit<Song, "id" | "uploadDate" | "streams" | "uploadedPlatforms" | "energyInvested">, energyInvested: number) => {
+  const uploadSong = (
+    songData: Omit<Song, "id" | "uploadDate" | "streams" | "uploadedPlatforms" | "energyInvested">,
+    energyInvested: number,
+  ) => {
     // Select random artwork
     const randomArtwork = songArtworks[Math.floor(Math.random() * songArtworks.length)]
 
@@ -1017,36 +1020,36 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const labels = [
       {
         name: "Wise Record",
-        requirements: { netProfit: 15000, influence: 20, songs: 10, avgSkill: 5 }
+        requirements: { netProfit: 15000, influence: 20, songs: 10, avgSkill: 5 },
       },
       {
-        name: "Sound Tunes", 
-        requirements: { netProfit: 35000, influence: 50, songs: 15, avgSkill: 15 }
+        name: "Sound Tunes",
+        requirements: { netProfit: 35000, influence: 50, songs: 15, avgSkill: 15 },
       },
       {
         name: "Vibe On",
-        requirements: { netProfit: 75000, influence: 100, songs: 20, avgSkill: 30 }
-      }
+        requirements: { netProfit: 75000, influence: 100, songs: 20, avgSkill: 30 },
+      },
     ]
 
-    const netProfit = gameState.financialRecords
-      .filter(r => r.type === "income")
-      .reduce((sum, r) => sum + r.amount, 0) - 
-      gameState.financialRecords
-      .filter(r => r.type === "expense")
-      .reduce((sum, r) => sum + r.amount, 0)
+    const netProfit =
+      gameState.financialRecords.filter((r) => r.type === "income").reduce((sum, r) => sum + r.amount, 0) -
+      gameState.financialRecords.filter((r) => r.type === "expense").reduce((sum, r) => sum + r.amount, 0)
 
     const totalInfluence = gameState.socialPlatforms.reduce((total, p) => total + p.influence, 0)
     const avgSkill = Object.values(gameState.skills).reduce((sum, skill) => sum + skill, 0) / 6
 
-    labels.forEach(label => {
-      if (!gameState.recordLabel && 
-          netProfit >= label.requirements.netProfit &&
-          totalInfluence >= label.requirements.influence &&
-          gameState.songs.length >= label.requirements.songs &&
-          avgSkill >= label.requirements.avgSkill &&
-          Math.random() < 0.3) { // 30% chance per week after meeting requirements
-        
+    labels.forEach((label) => {
+      if (
+        !gameState.recordLabel &&
+        netProfit >= label.requirements.netProfit &&
+        totalInfluence >= label.requirements.influence &&
+        gameState.songs.length >= label.requirements.songs &&
+        avgSkill >= label.requirements.avgSkill &&
+        Math.random() < 0.3
+      ) {
+        // 30% chance per week after meeting requirements
+
         const contractMessage: ChatMessage = {
           id: Date.now().toString() + Math.random(),
           type: "label_contract",
@@ -1057,9 +1060,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
           responded: false,
         }
 
-        setGameState(prev => ({
+        setGameState((prev) => ({
           ...prev,
-          chatMessages: [contractMessage, ...prev.chatMessages.slice(0, 9)]
+          chatMessages: [contractMessage, ...prev.chatMessages.slice(0, 9)],
         }))
       }
     })
@@ -1072,12 +1075,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (Math.random() < 0.4) {
         const messageTypes = ["feature", "collaboration", "branding"]
         const type = messageTypes[Math.floor(Math.random() * messageTypes.length)]
-        
+
         const artists = ["MC Flow", "DJ Beats", "Singer Sarah", "Producer Mike", "Rapper X", "Vocalist Luna"]
         const brands = ["Nike Music", "Beats by Dre", "Spotify Originals", "Apple Music", "Samsung Galaxy"]
-        
+
         let message: ChatMessage
-        
+
         if (type === "feature") {
           const artist = artists[Math.floor(Math.random() * artists.length)]
           message = {
@@ -1085,10 +1088,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
             type: "feature",
             from: artist,
             message: `Hey! Your label connected us and I love your style. Want to feature on my upcoming single? You'll get 30% of the revenue share.`,
-            offer: { 
-              amount: Math.floor(Math.random() * 8000) + 2000, 
+            offer: {
+              amount: Math.floor(Math.random() * 8000) + 2000,
               details: "Feature collaboration with 30% revenue share",
-              revenueShare: 30
+              revenueShare: 30,
             },
             timestamp: new Date(),
             responded: false,
@@ -1100,10 +1103,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
             type: "collaboration",
             from: artist,
             message: `Your label recommended you for a collaboration! Let's create something amazing together. 50/50 split on everything.`,
-            offer: { 
-              amount: Math.floor(Math.random() * 12000) + 5000, 
+            offer: {
+              amount: Math.floor(Math.random() * 12000) + 5000,
               details: "Full collaboration with 50% revenue share",
-              revenueShare: 50
+              revenueShare: 50,
             },
             timestamp: new Date(),
             responded: false,
@@ -1115,18 +1118,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
             type: "branding",
             from: brand,
             message: `We want to partner with you for our next campaign! Your music and image align perfectly with our brand values. Interested in a lucrative endorsement deal?`,
-            offer: { 
-              amount: Math.floor(Math.random() * 25000) + 10000, 
-              details: "Brand endorsement and marketing partnership"
+            offer: {
+              amount: Math.floor(Math.random() * 25000) + 10000,
+              details: "Brand endorsement and marketing partnership",
             },
             timestamp: new Date(),
             responded: false,
           }
         }
-        
-        setGameState(prev => ({
+
+        setGameState((prev) => ({
           ...prev,
-          chatMessages: [message, ...prev.chatMessages.slice(0, 9)]
+          chatMessages: [message, ...prev.chatMessages.slice(0, 9)],
         }))
       }
     }
@@ -1140,9 +1143,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         "Your latest song is on repeat! When's the next release? 🔥",
         "You inspire me to chase my dreams too! Thank you for the motivation! ✨",
         "Your voice gives me chills every time! Please never stop making music! 🎤",
-        "Can't wait to see you perform live someday! You're incredible! 🌟"
+        "Can't wait to see you perform live someday! You're incredible! 🌟",
       ]
-      
+
       const fanMessage: ChatMessage = {
         id: Date.now().toString() + Math.random(),
         type: "fan_message",
@@ -1151,10 +1154,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         timestamp: new Date(),
         responded: false,
       }
-      
-      setGameState(prev => ({
+
+      setGameState((prev) => ({
         ...prev,
-        chatMessages: [fanMessage, ...prev.chatMessages.slice(0, 9)]
+        chatMessages: [fanMessage, ...prev.chatMessages.slice(0, 9)],
       }))
     }
   }
@@ -1164,7 +1167,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const weeksSinceLastPractice = gameState.week - gameState.lastPracticeWeek
     if (weeksSinceLastPractice >= 2) {
       const decayAmount = 0.5 * (weeksSinceLastPractice - 1) // 0.5 per week after 2 weeks
-      setGameState(prev => ({
+      setGameState((prev) => ({
         ...prev,
         skills: {
           ...prev.skills,
@@ -1172,7 +1175,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           voice: Math.max(1, prev.skills.voice - decayAmount),
           production: Math.max(1, prev.skills.production - decayAmount),
           writing: Math.max(1, prev.skills.writing - decayAmount),
-        }
+        },
       }))
     }
 
@@ -1246,5 +1249,167 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }, 0)
 
     // Fan growth based on streams and other factors
-    const fanGrowth = 0
+    let fanGrowth = 0
     if (totalStreams >= 700) {
+      fanGrowth = Math.floor(totalStreams / 700) + Math.floor(Math.random() * 10)
+    } else if (totalStreams >= 300) {
+      fanGrowth = Math.floor(totalStreams / 300) + Math.floor(Math.random() * 5)
+    } else if (totalStreams >= 100) {
+      fanGrowth = Math.floor(totalStreams / 100) + Math.floor(Math.random() * 3)
+    } else if (totalStreams >= 50) {
+      fanGrowth = Math.floor(Math.random() * 2) + 1
+    }
+
+    // Morale bonus for fan growth
+    if (gameState.spiritualMorale > 50) {
+      fanGrowth = Math.floor(fanGrowth * (1 + gameState.spiritualMorale / 200))
+    }
+
+    // Update trade item prices with realistic market movements
+    const updatedTradeItems = gameState.tradeItems.map((item) => {
+      const volatility = item.volatility
+      const change = (Math.random() - 0.5) * 2 * volatility
+      const newPrice = Math.max(item.currentPrice * (1 + change), 0.01)
+
+      // Update price history
+      const newHistory = [...item.priceHistory.slice(-9), newPrice]
+
+      // Determine trend
+      const recentPrices = newHistory.slice(-3)
+      let trend: "up" | "down" | "stable" = "stable"
+      if (recentPrices.length >= 2) {
+        const avgRecent = recentPrices.reduce((sum, price) => sum + price, 0) / recentPrices.length
+        const avgOlder = item.priceHistory.slice(-6, -3).reduce((sum, price) => sum + price, 0) / 3
+        if (avgRecent > avgOlder * 1.05) trend = "up"
+        else if (avgRecent < avgOlder * 0.95) trend = "down"
+      }
+
+      return {
+        ...item,
+        currentPrice: newPrice,
+        priceHistory: newHistory,
+        trend,
+      }
+    })
+
+    // Calculate total weekly income
+    const totalWeeklyIncome = weeklyHustleEarnings + streamingEarnings
+
+    // Calculate expenses
+    const totalExpenses = gameState.expenses.rent + gameState.expenses.food + gameState.expenses.transportation
+
+    // Calculate taxes (15% of income over $1000)
+    const taxableIncome = Math.max(0, totalWeeklyIncome - 1000)
+    const taxes = taxableIncome * 0.15
+
+    // Net weekly earnings
+    const netWeeklyEarnings = totalWeeklyIncome - totalExpenses - taxes
+
+    // Add financial records
+    if (weeklyHustleEarnings > 0) {
+      addFinancialRecord("income", "Side Hustles", weeklyHustleEarnings, "Weekly side hustle earnings")
+    }
+    if (streamingEarnings > 0) {
+      addFinancialRecord("income", "Streaming", streamingEarnings, "Weekly streaming revenue")
+    }
+    if (totalExpenses > 0) {
+      addFinancialRecord("expense", "Living", totalExpenses, "Weekly living expenses")
+    }
+    if (taxes > 0) {
+      addFinancialRecord("expense", "Taxes", taxes, "Weekly income taxes")
+    }
+
+    // Check for label contracts
+    checkForLabelContracts()
+
+    // Generate enhanced chat messages
+    generateEnhancedChatMessages()
+
+    setGameState((prev) => ({
+      ...prev,
+      week: prev.week + 1,
+      practicePoints: 100,
+      marketingPoints: 5,
+      timeSlots: 7,
+      energy: 10,
+      earnings: prev.earnings + netWeeklyEarnings,
+      weeklyEarnings: netWeeklyEarnings,
+      fans: prev.fans + fanGrowth,
+      songs: updatedSongs,
+      tradeItems: updatedTradeItems,
+      weeklyTaxes: taxes,
+    }))
+
+    // Show tithe modal if player has earnings
+    if (netWeeklyEarnings > 0) {
+      setShowTitheModal(true)
+    }
+  }
+
+  const uploadSongToPlatform = (songId: string, platformId: string) => {
+    setGameState((prev) => ({
+      ...prev,
+      songs: prev.songs.map((song) =>
+        song.id === songId
+          ? {
+              ...song,
+              uploadedPlatforms: [...song.uploadedPlatforms, platformId],
+              streams: { ...song.streams, [platformId]: 0 },
+            }
+          : song,
+      ),
+    }))
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+        <div className="text-white text-xl">Loading Alpha Tune...</div>
+      </div>
+    )
+  }
+
+  const contextValue: GameContextType = {
+    gameState,
+    translation,
+    setGameState,
+    setLanguage,
+    updateSkill,
+    spendPracticePoints,
+    spendMarketingPoints,
+    spendTimeSlots,
+    spendEnergy,
+    addEarnings,
+    addFans,
+    updateMorale,
+    uploadSong,
+    purchaseItem,
+    createSocialPost,
+    startSideHustle,
+    quitSideHustle,
+    buyTradeItem,
+    sellTradeItem,
+    nextWeek,
+    showTitheModal,
+    setShowTitheModal,
+    uploadSongToPlatform,
+    addFinancialRecord,
+    signWithLabel,
+    resetGame,
+    respondToMessage,
+    unreadMessages,
+    getCareerStatus,
+    toggleMusic,
+    requestStoragePermission,
+  }
+
+  return <GameContext.Provider value={contextValue}>{children}</GameContext.Provider>
+}
+
+export function useGame() {
+  const context = useContext(GameContext)
+  if (context === undefined) {
+    throw new Error("useGame must be used within a GameProvider")
+  }
+  return context
+}
