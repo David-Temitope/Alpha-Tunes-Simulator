@@ -1,10 +1,9 @@
 "use client"
 
-import { useContext } from "react"
-import { GameContext } from "@/app/contexts/GameContext"
+import { useGame } from "../context/game-context"
 
 const Dashboard = () => {
-  const { getCareerStatus } = useContext(GameContext)
+  const { getCareerStatus } = useGame()
 
   return (
     <div className="bg-gray-800 p-4 rounded-md shadow-md">
